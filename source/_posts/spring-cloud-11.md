@@ -253,4 +253,51 @@ public class SpringCloudRibbonConsumerApplication {
         NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule
 ```
 
+---
 
+# Ribbon 配置
+
+## 超时与重试
+
+HTTP 请求难免会出现请求超时，此时对调用进行时限的控制以及在时限之后的重试尤为重要。对于超时重试的配置如下：
+```yml
+{instance-id}: # instance-id 指的是被调用者的服务名称
+  ribbon:
+    ConnectTimeout: 30000 # 链接超时时间
+    ReadTimeout: 30000 # 读超时时间
+    MaxAutoRetries: 1 # 对第一次请求的服务的重试次数
+    MaxAutoRetriesNextServer: 1 # 要重试的下一个服务的最大数量（不包括第一个服务）
+    OkToRetryOnAllOperations: true # 是否对 连接超时、读超时、写超时 都进行重试
+```
+
+
+## Ribbon 饥饿加载
+
+Ribbon 在进行负载均衡时，并不是启动时就加载上线文，而是在实际的请求发送时，才去请求上下文信息，获取被调用者的 ip、端口，这种方式在网络环境较差时，往往会使得第一次引起超时，导致调用失败。此时需要指定 Ribbon 客户端，进行`饥饿加载`，即：在启动时就加载好上下文。
+
+```yml
+ribbon:
+  eager-load:
+    enabled: true
+    clients: spring-cloid-ribbon-provider
+```
+
+此时启动 consumer，会看到控制打印信息如下：
+```
+Client: spring-cloid-ribbon-provider instantiated a LoadBalancer: DynamicServerListLoadBalancer:{NFLoadBalancer:name=spring-cloid-ribbon-provider,current list of Servers=[],Load balancer stats=Zone stats: {},Server stats: []}ServerList:null
+Using serverListUpdater PollingServerListUpdater
+DynamicServerListLoadBalancer for client spring-cloid-ribbon-provider initialized: DynamicServerListLoadBalancer:{NFLoadBalancer:name=spring-cloid-ribbon-provider,current list of Servers=[],Load balancer stats=Zone stats: {},Server stats: []}ServerList:org.springframework.cloud.netflix.ribbon.eureka.DomainExtractingServerList@79e7188e
+```
+
+可以看到启动时就加载了 `spring-cloid-ribbon-provider`，并绑定了`LoadBalancer`
+
+
+## Ribbon 常用配置
+
+| 配置项 | 说明 |
+| :-: | :-: |
+| {instance-id}:ribbon.NFLoadBalancerClassName | 指负载均衡器类路径 |
+| {instance-id}:ribbon:NFLoadBalancerRuleClassName | 指定负载均衡算法类路径 |
+| {instance-id}:ribbom:NFLoadBalancerPingClassName | 指定检测服务存活的类路径 |
+| {instance-id}:ribbon:NIWSServerListClassName | 指定获取服务列表的实现类路径 |
+| {instance-id}:ribbon:NIWSServerListFilterClassName | 指定服务的 Filter 实现类路径 |
