@@ -301,3 +301,18 @@ DynamicServerListLoadBalancer for client spring-cloid-ribbon-provider initialize
 | {instance-id}:ribbom:NFLoadBalancerPingClassName | 指定检测服务存活的类路径 |
 | {instance-id}:ribbon:NIWSServerListClassName | 指定获取服务列表的实现类路径 |
 | {instance-id}:ribbon:NIWSServerListFilterClassName | 指定服务的 Filter 实现类路径 |
+
+
+## Ribbon 脱离 Eureka
+
+默认情况下，Ribbon 客户端会从 Eureka Server 读取服务注册信息列表，达到动态负载均衡的功能。如果 Eureka 是一个提供多人使用的公共注册中心(如 SpringCloud 中文社区公益 Eureka：http://eureka.springcloud.cn)，此时极易产生服务侵入问题，此时就不能从 Eureka 中读取服务列表，而应该在 Ribbon 客户端自行制定源服务地址
+
+```yml
+ribbon:
+  eureka:
+    enabled: false # Ribbon 脱离 Eureka 使用
+
+{instance-id}:
+  ribbon:
+    listOfServers: http://localhost:8888 # 制定源服务地址
+```
