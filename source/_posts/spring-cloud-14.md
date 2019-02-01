@@ -1,5 +1,5 @@
 ---
-title: Spring Cloud 微服务（14） --- Hystrix(二) <BR> Hystrix Dashboard、Turbine
+title: Spring Cloud 微服务（14） --- Hystrix(二) <BR> Hystrix Dashboard
 date: 2019-01-31 16:03:57
 updated: 2019-01-31 16:03:57
 categories:
