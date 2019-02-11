@@ -1,5 +1,5 @@
 ---
-title: Spring Cloud 微服务（15） --- Hystrix(三) --- Turbine、异常处理
+title: Spring Cloud 微服务（15） --- Hystrix(三) <BR/> Turbine、异常处理
 date: 2019-02-01 09:53:27
 updated: 2019-02-01 09:53:27
 categories:
@@ -312,3 +312,110 @@ public class BadRequestErrorDecoder implements ErrorDecoder {
 
 之后在 yml 配置文件中增加对微服务调用的 ErrorDecoder 配置
 
+```yml
+feign:
+  hystrix:
+    enabled: true
+  client:
+    config:
+      spring-cloud-hystrix-dashboard-provider-service: # 针对哪个服务
+        errorDecoder: com.laiyy.gitee.dashboard.springcloudhystrixdashboardexception.decoder.BadRequestErrorDecoder # 错误解码器
+```
+
+---
+
+# Hystrix 配置
+
+一个简单的 Hystrix 配置，基本有一下几个内容
+```yml
+hystrix:
+  command:
+    default: # default 为全局配置，如果需要针对某个 Fallback 配置，需要使用 HystrixCommandKey
+      circuitBreaker:
+        errorThresholdPercentage: 50 # 这是打开 Fallback 并启动 Fallback 的错误比例。默认 50%
+        forceOpen: false # 是否强制打开断路器，拒绝所有请求。默认 false
+      execution:
+        isolation:
+          strategy: THREAD # SEMAPHORE  请求隔离策略，默认 THREAD
+          # 当 strategy 为 THREAD 时
+          thread:
+            timeoutInMilliseconds: 5000 # 执行超时时间  默认 1000
+            interruptOnTimeout: true # 超时时是否中断执行，默认 true
+          # 当 strategy 为 SEMAPHORE 时
+          semaphore:
+            maxConcurrentRequests: 10 # 最大允许请求数，默认 10
+        # 是否开启超时
+        timeout:
+          enabled: true # 默认 true
+  # 当隔离策略为 thread 时
+  threadpool: 
+    default: # default 为全局配置，如果需要再很对某个 线程池 配置，需要使用 HystrixThreadPoolKey
+      coreSize: 10 # 默认线程池大小，默认 10
+      maximumSize: 10 # 最大线程池，默认 10
+      allowMaximumSizeToDivergeFromCoreSize: false # 是否允许 maximumSize 配置生效
+```
+
+## 隔离策略
+
+```yml
+hystrix:
+  command:
+    default: 
+      execution:
+        isolation:
+          strategy: THREAD # SEMAPHORE  请求隔离策略，默认 THREAD
+```
+
+隔离策略有两种：线程隔离策略和信号量隔离策略。分别对应：`THREAD`、`SEMAPHORE`。
+
+### 线程隔离
+Hystrix 默认的隔离策略，通过线程池大小可以控制并发量，当线程饱和时，可以拒绝服务，防止出现问题。
+
+优点：
+- 完全隔离第三方应用，请求线程可以快速收回
+- 请求线程可以继续接受新的请求，如果出现线程问题，线程池隔离是独立的，不会影响其他应用
+- 当失败的应用再次变得可用时，线程池将清理并可以立即恢复
+- 独立的线程池提高了并发性
+
+缺点：
+- 增加CPU开销，每个命令的执行都涉及到线程的排队、调度、上下文切换等。
+
+### 信号量隔离
+
+使用一个原子计数器(信号量)来记录当前有多少线程正在运行，当请求进来时，先判断计数器的数值(默认10)，如果超过设置则拒绝请求，否则正常执行，计数器+1。成功执行后，计数器-1。
+
+与`线程隔离`的最大区别是，执行请求的线程依然是`请求线程`，而不是线程隔离中分配的线程池。
+
+### 对单个 HystrixCommand 配置隔离策略等
+```java
+@HystrixCommand(fallbackMethod = "defaultUser", commandProperties = {
+        // 配置线程隔离策略， value 可以是 THREAD 或 SEMAPHORE
+        @HystrixProperty(name = HystrixPropertiesManager.EXECUTION_ISOLATION_STRATEGY, value = "THREAD")
+})
+```
+
+### 应用场景
+
+线程隔离：第三方应用、接口；并发量大
+信号量隔离：内部应用、中间件(redis)；并发量不大
+
+## HystrixCommandKey、HystrixThreadPoolKey
+
+HystrixCommandKey 是一个 @HystrixCommand 注解标注的方法的 key，默认为标注方法的`方法名`，也可以使用 @HystrixCommand 进行配置
+HystrixThreadPoolKey 是 Hystrix 开启线程隔离策略后，指定的线程池名称，可以使用 @HystrixCommand 配置
+
+```java
+@HystrixCommand(fallbackMethod = "defaultUser",
+    // 隔离策略
+    commandProperties = {
+        @HystrixProperty(name = HystrixPropertiesManager.EXECUTION_ISOLATION_STRATEGY, value = "THREAD")
+}, 
+    // HystrixCommandKey
+    commandKey = "commandKey", 
+    // HystrixThreadPoolKey
+    threadPoolKey = "threadPoolKey", 
+    // 线程隔离策略配置超时时间
+    threadPoolProperties = {
+        @HystrixProperty(name = HystrixPropertiesManager.EXECUTION_ISOLATION_THREAD_INTERRUPT_ON_TIMEOUT, value = "5000")
+})
+```
