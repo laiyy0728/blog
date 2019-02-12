@@ -9,7 +9,7 @@ tags:
     - SpringCloud
 ---
 
-Hystrix 的优化可以从`线程`、`请求缓存`、`线程传与并发`、`命令注解`、`Collapser` 等方面入手优化
+Hystrix 的优化可以从`线程`、`请求缓存`、`线程传递与并发`、`命令注解`、`Collapser 请求合并` 等方面入手优化
 
 <!-- more -->
 
