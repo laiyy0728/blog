@@ -24,6 +24,8 @@ tags:
 
 ### 在一个配置文件中，指定多个配置
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-eureka/spring-cloud-eureka-server-ha***
+
 可以使用如下配置，在一个 application.yml 文件中，配置多个 Eureka Server，相互注册指定 defaultZone，并使用 profile 区别每个 Server 的配置。
 
 ```yml
@@ -156,6 +158,7 @@ eureka:
 
 # 使用 Region、Zone 搭建高可用集群
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-eureka/spring-cloud-eureka-client-region-zone***
 
 配置文件 application-zone1a.yml：
 ```yml
@@ -192,6 +195,8 @@ application-zone2b.yml： 将 server.port 修改为 8764，eureka.instance.metad
 ![Region Zone Server](/images/spring-cloud/eureka/region-zone-server.png)
 
 ## 创建 Eureka Client
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-eureka/spring-cloud-eureka-client-region-zone***
 
 创建两个 Eureka Client，分别对应两个 Zone
 
@@ -262,6 +267,8 @@ http://localhost:8081/actuator/env、http://localhost:8082/actuator/env
 
 ## Eureka Server 开启 Http Basic
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-eureka/spring-cloud-eureka-server-http-basic***
+
 ### 引入 pom 依赖
 
 ```xml
@@ -303,6 +310,8 @@ eureka:
 
 
 ## Eureka Client 开启 Http Basic
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-eureka/spring-cloud-eureka-client-http-basic***
 
 ### 引入 pom 依赖
 

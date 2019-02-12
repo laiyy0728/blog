@@ -16,6 +16,8 @@ tags:
 
 # RestTemplate
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-feign/spring-cloud-feign-simple***
+
 ## 脱离 Eureka 的使用
 
 在脱离 Eureka 使用 RestTemplate 调用远程接口时，只需要引入 web 依赖即可。
@@ -105,6 +107,8 @@ Feign 的特性：
 - 支持 HTTP 请求、响应压缩
 
 ## 简单示例
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-feign/spring-cloud-feign-simple***
 
 使用 Feign 进行 github 接口调用
 

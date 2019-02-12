@@ -25,6 +25,8 @@ provider-servoce 调用 hello-service 的 hello-service 接口。
 
 ### hello-service
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-hystrix/spring-cloud-hystrix-dashboard/spring-cloud-hystrix-dashboard-hello-service***
+
 #### pom
 
 ```xml
@@ -125,6 +127,8 @@ public class SpringCloudHystrixDashboardHelloServiceApplication {
 
 ### provider-service
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-hystrix/spring-cloud-hystrix-dashboard/spring-cloud-hystrix-dashboard-provider-service***
+
 pom、yml 配置、启动类与 hello-sercice 基本一致，需要修改 server.port、spring.application.name
 
 #### feign、Controller
@@ -166,6 +170,8 @@ public class ProviderController {
 
 
 ### hystrix-dashboard
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-hystrix/spring-cloud-hystrix-dashboard/spring-cloud-hystrix-dashboard-index***
 
 #### pom
 ```xml

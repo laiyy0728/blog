@@ -144,6 +144,8 @@ Client 与 Server 之间有租约，Client 需要定时发送心跳维持租约�
 
 ## 建立 Eureka Server 子项目
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-eureka/spring-cloud-eureka-server-simple***
+
 在`父pom`中建立 Eureka Server 子项目 module：`spring-cloud-eureka-server`
 
 ### pom 依赖
@@ -224,6 +226,8 @@ eureka:
 
 
 ## 建立 Eureka Client 项目
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-eureka/spring-cloud-eureka-client-simple***
 
 在 在`父pom`中建立 Eureka Server 子项目 module：`spring-cloud-eureka-client-simple`，建立一个简单的 eureka client 工程
 

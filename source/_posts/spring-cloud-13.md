@@ -25,6 +25,8 @@ tags:
 
 # 实例
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-hystrix/spring-cloud-hystrix-simple***
+
 ## pom 依赖
 
 ```xml
@@ -160,6 +162,8 @@ com.netflix.hystrix.contrib.javanica.exception.FallbackDefinitionException: fall
 ---
 
 # 断路器
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-hystrix/spring-cloud-hystrix-feign-broker***
 
 断路器的作用：在服务出现错误的时候，熔断该服务，保护调用者，防止出现雪崩。
 

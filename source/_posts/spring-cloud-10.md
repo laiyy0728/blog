@@ -16,6 +16,8 @@ Feign 在远程调用时，除了 GET 方式传递 POJO 外，还有几个很重
 
 # 文件上传
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-feign/spring-cloud-feign-file***
+
 Feign 的子项目 feign-form(https://github.com/OpenFeign/feign-form) 支持文件上传，其中实现了上传所需要的 Encoder
 
 模拟文件上传：`spring-cloud-feign-file-server`、`spring-cloud-feign-file-client`，其中 server 模拟文件服务器，作为服务提供者；client 模拟文件上传，通过 FeignClient 发送文件到文件服务器
@@ -199,6 +201,8 @@ POST MAN 调用 client 上传接口
 
 # 图片流
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-feign/spring-cloud-feign-file***
+
 通过 Feign 返回图片，一般是字节数组
 
 在`文件上传`代码的基础上，再加上图片获取
@@ -239,6 +243,8 @@ public ResponseEntity<byte[]> getImages() throws IOException {
 ---
 
 # Feign 传递 Headers
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-feign/spring-cloud-feign-multi-params***
 
 在认证、鉴权中，无论是哪种权限控制框架，都需要传递 header，但在使用 Feign 的时候，会发现外部请求 ServiceA 时，可以获取到 header，但是在 ServiceA 调用 ServiceB 时，ServiceB 无法获取到 Header，导致 Header 丢失。
 

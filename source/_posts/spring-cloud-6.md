@@ -81,6 +81,8 @@ keytool -import -alias client -file client.crt -keystore server.p12
 
 ## Eureka Server
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-eureka/spring-cloud-eureka-server-https***
+
 将生成的最后的 server.p12 文件放在 resources 下
 
 ### application.yml
@@ -120,6 +122,8 @@ eureka:
 ![Https 协议](/images/spring-cloud/eureka/https-server.png)
 
 ## Eureka Client
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-eureka/spring-cloud-eureka-client-https***
 
 Client 只在连接 Eureka Server 的时候使用 https 协议，如果要全局都使用 https，则和 Server 的 https 配置一致，只需要将配置换成 client.p12 的配置即可。
 

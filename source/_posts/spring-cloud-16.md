@@ -28,6 +28,8 @@ Hystrix 请求有两种方式：继承 HystrixCommand 类、使用 @HystrixComma
 
 ## Cache Consumer
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-hystrix/spring-cloud-hystrix-cache/spring-cloud-hystrix-cache-impl***
+
 ### pom、yml
 
 ```xml
@@ -306,6 +308,8 @@ public class CacheController {
 ```
 
 ## Cache Service
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-hystrix/spring-cloud-hystrix-cache/spring-cloud-hystrix-cache-provider-user***
 
 ### pom、yml
 ```xml

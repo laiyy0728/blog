@@ -16,6 +16,7 @@ tags:
 
 # Http Client 替换
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-feign/spring-cloud-feign-httpclient***
 
 Feign 默认情况下使用的是 JDK 原生的 URLConnection 发送 HTTP 请求，没有连接池，但是对每个地址都会保持一个长连接。可以利用 Apache HTTP Client 替换原始的 URLConnection，通过设置连接池、超时时间等，对服务调用进行调优。
 
@@ -98,6 +99,8 @@ feign:
 ---
 
 # GET 方式传递 POJO等
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-feign/spring-cloud-feign-multi-params***
 
 SpringMVC 是支持 GET 方法直接绑定 POJI 的，但是 Feign 的实现并未覆盖所有 SpringMVC 的功能，常用的解决方式：
 - 把 POJO 拆散成一个一个单独的属性放在方法参数里

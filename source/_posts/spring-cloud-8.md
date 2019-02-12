@@ -18,6 +18,8 @@ Feign 是通过 http 调用的，那么就牵扯到一个数据大小的问题�
 
 # Feign GZIP 压缩
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-feign/spring-cloud-feign-gzip***
+
 Spring Cloud Feign 支持对请求和响应进行 GZIP 压缩，以调高通信效率。
 
 ## 开启 gzip 压缩
@@ -187,6 +189,8 @@ Binary data              -------------------------------- 第二处不同
 ---
 
 # Feign 配置
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-feign/spring-cloud-feign-config***
 
 ## 对单个指定特定名称的 Feign 进行配置
 

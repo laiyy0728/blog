@@ -19,6 +19,8 @@ Turbine 是为了聚合所有相关的 hystrix.stream 流的方案，然后在 h
 
 # Turbine
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-hystrix/spring-cloud-hystrix-dashboard/spring-cloud-hystrix-dashboard-turbine***
+
 微服务继续沿用上例中的 hello-service、provider-service，新建 Turbine 项目
 
 ## pom
@@ -104,6 +106,8 @@ public class SpringCloudHystrixDashboardTurbineApplication {
 ---
 
 # 异常处理
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-hystrix/spring-cloud-hystrix-dashboard/spring-cloud-hystrix-dashboard-exception***
 
 Hystrix 的异常处理中，有五种出错情况会被 Fallback 截获，触发 Fallbac
 - FAILURE：执行失败，抛出异常

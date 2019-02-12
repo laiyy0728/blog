@@ -28,6 +28,8 @@ Eureka Server 不再赘述，可以直接使用 `spring-cloud-eureka-server-simp
 
 ## Consumer
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-ribbon/spring-cloud-ribbon-consumer***
+
 yml：
 ```yml
 spring:
@@ -78,6 +80,8 @@ public class ConsumerController {
 ```
 
 ## provider
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-ribbon/spring-cloud-ribbon-provider***
 
 pom 依赖：
 ```xml
@@ -256,6 +260,8 @@ public class SpringCloudRibbonConsumerApplication {
 ---
 
 # Ribbon 配置
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-ribbon/spring-cloud-ribbon-config***
 
 ## 超时与重试
 

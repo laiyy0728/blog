@@ -16,6 +16,8 @@ Hystrix Collapser 是 Hystrix 退出的针对多个请求，调用单个后端�
 
 # Hystrix Collapser
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-hystrix/spring-cloud-hsytrix-collapser***
+
 ## 实例
 
 ### pom、yml
@@ -248,6 +250,8 @@ Hystrix Collapser 主要用于请求合并的场景。当在某个时间内有�
 ---
 
 # Hystrix 线程传递、并发
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-hystrix/spring-cloud-hystrix-thread***
 
 Hystrix 的两种隔离策略：线程隔离、信号量隔离。
 
