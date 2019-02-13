@@ -4,12 +4,13 @@ date: 2019-02-13 13:53:28
 updated: 2019-02-13 13:53:28
 categories:
     Java
-tags:
-    - SpringBoot
-    - Actuator
+tags: 
+	[SpringCloud, SpringBoot, Actuator]
 ---
 
 运行时度量端点，包括： /metrics、/trace、/threaddump、/health 等
+
+<!-- more -->
 
 ---
 

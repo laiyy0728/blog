@@ -5,13 +5,15 @@ updated: 2019-02-12 16:53:00
 categories:
     Java
 tags:
-    - SpringBoot
-    - Actuator
+		[SpringBoot, SpringCloud, Actuator]
 ---
 
 在 Hystrix Dashboard 中，使用了 /actuator/hystrix.stream，查看正在运行的项目的运行状态。 其中 `/actuator` 代表 SpringBoot 中的 Actuator 模块。该模版提供了很多生产级别的特性，如：监控、度量应用。Actuator 的特性可以通过众多的 REST 端点，远程 shell、JMX 获得。
 
+
 <!-- more -->
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-boot-actuator***
 
 # 常见 Actuator 端点
 
