@@ -1,11 +1,12 @@
 ---
-title: Spring Cloud 微服务（20） --- Zuul <br>
+title: Spring Cloud 微服务（20） --- Zuul(一) <br> 基本概念、配置
 date: 2019-02-13 16:12:03
 updated: 2019-02-13 16:12:03
 categories:
     Java
 tags:
     - SpringCloud
+    - Zuul
 ---
 
 
