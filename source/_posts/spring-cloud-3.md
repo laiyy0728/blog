@@ -16,8 +16,15 @@ Eureka 最初是针对 AWS 不提供中间服务层的负载均衡的限制开�
 
 # Spring Cloud 微服务系列版本
 
-> Spring Boot 版本： 2.1.0.RELEASE
-> Spring Cloud 版本：Finchley.RELEASE
+> Spring Boot 版本： 2.1.x.RELEASE
+> Spring Cloud 版本：Greenwich.RELEASE
+
+或
+
+> SpringBoot 版本：2.0.x.RELEASE
+> SpringCloud 版本：Finchley.RELEASE
+
+此博客采用 2.1.0 + Greenwich 版本
 
 ---
 
