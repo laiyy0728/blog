@@ -92,6 +92,8 @@ Filter 之间，通过 `com.netflix.zuul.context.RequestContext` 类进行通信
 
 整合 `spring-boot-starter-actuator` 后，查看 idea 控制台 endpoints 栏的 mappings，可以看到多了几个 Actuator 端点
 
+## routes 端点
+
 访问 http://localhost:8989/actuator/routes 可以查看当前 zuul server 映射了几个路径、服务
 ```json
 {
@@ -125,3 +127,267 @@ Filter 之间，通过 `com.netflix.zuul.context.RequestContext` 类进行通信
     }
 }
 ```
+
+## filters 端点
+
+访问 http://localhost:8989/actuator/filters ，返回当前 zuul 的所有 filters
+
+![Zuul Filters](/images/spring-cloud/zuul/zuul-filters.png)
+
+## 内置 Filters
+
+| 名称 | 类型 | 顺序 | 描述 |
+| :-: | :-: | :-: | :-: |
+| ServletDetectionFilter | pre | -3 | 通过 Spring Dispatcher 检查请求是否通过 |
+| Servlet30WrapperFilter | pre | -2 | 适配 HttpServletRequest 为 Servlet30RequestWrapper 对象 |
+| FormBodyWrapperFilter | pre | -1 | 解析表单数据，并为下游请求进行重新编码 |
+| DebugFilter | pre | 1 | Debug 路由标识 |
+| PreDecorationFilter | pre | 5 | 处理请求上下文供后续使用，设置下游相关头信息 |
+| RibbonRoutingFilter | route | 10 | 使用 Ribbon、Hystrix、嵌入式 HTTP 客户端发送请求 |
+| SimpleHostRoutingFilter | route | 100 | 使用 Apache Httpclient 发送请求 |
+| SendForwardFilter | route | 500 | 使用 Servlet 转发请求 |
+| SendResponseFilter | post | 1000 | 将代理请求的响应写入当前响应 |
+| SendErrorFilter | error | 0 | 如果 RequestContext.getThrowable() 不为空，则转发到 error.path 哦诶之的路径 |
+
+
+如果使用 `@EnableZuulServer` 注解，将减少 `PreDecorationFilter`、`RibbonRoutingFilter`、`SimpleHostRoutingFilter`
+
+如果要替换到某个原生的 Filter，可以自实现一个和原生 Filter 名称、类型一样的 Filter，并替换。或者禁用掉某个filter，并自实现一个新的。
+禁用语法： `zuul.{SimpleClassName}.{filterType}.disable=true`，如 `zuul.SendErrorFilter.error.disable=true`
+
+
+---
+
+# 多级业务处理
+
+在 Zuul Filter 链体系中，可以把一组业务逻辑细分，然后封装到一个个紧密结合的 Filter，设置处理顺序，组成一组 Filter 链。
+
+## 自定义实现 Filter
+
+在 Zuul 中实现自定义 Filter，继承 `ZuulFilter` 类即可，ZuulFilter 是一个抽象类，需要实现以下几个方法
+
+- String filterType：使用返回值设定 Filter 类型，可以设置为 `pre`、`route`、`post`、`error`
+- int filterOrder：使用返回值设置 Filter 执行次序
+- boolean shouldFilter：使用返回值设定该 Filter 是否执行，可以作为开关来使用
+- Object run：Filter 的核心执行逻辑
+
+```java
+// 自定义 ZuulFilter
+public class FirstPreFilter extends ZuulFilter {
+    @Override
+    public String filterType() {
+        return FilterConstants.PRE_TYPE;
+    }
+
+    @Override
+    public int filterOrder() {
+        return 0;
+    }
+
+    @Override
+    public boolean shouldFilter() {
+        return true;
+    }
+
+    @Override
+    public Object run() throws ZuulException {
+        System.out.println("自定义 Filter，类型为 pre！");
+        return null;
+    }
+}
+
+
+// 注入 Spring 容器
+@Bean
+public FirstPreFilter firstPreFilter(){
+    return new FirstPreFilter();
+}
+```
+
+此时访问 http://localhost:8989/provider/get-result ，查看控制台：
+```
+Initializing Servlet 'dispatcherServlet'
+Completed initialization in 0 ms
+自定义 Filter，类型为 pre！
+Flipping property: spring-cloud-provider-service-simple.ribbon.ActiveConnectionsLimit to use NEXT property: niws.loadbalancer.availabilityFilteringRule.activeConnectionsLimit = 2147483647
+Shutdown hook installed for: NFLoadBalancer-PingTimer-spring-cloud-provider-service-simple
+```
+
+
+## 业务处理
+
+使用 SecondFilter 验证是否传入参数 a，ThirdPreFilter 验证是否传入参数 b，在 PostFilter 统一处理返回内容。
+
+***SecondPreFilter***
+```java
+public class SecondPreFilter extends ZuulFilter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecondPreFilter.class);
+    @Override
+    public String filterType() {
+        return FilterConstants.PRE_TYPE;
+    }
+
+    @Override
+    public int filterOrder() {
+        return 2;
+    }
+
+    @Override
+    public boolean shouldFilter() {
+        return true;
+    }
+
+    @Override
+    public Object run() throws ZuulException {
+        LOGGER.info(">>>>>>>>>>>>> SecondPreFilter ！ <<<<<<<<<<<<<<<<");
+        // 获取上下文
+        RequestContext requestContext = RequestContext.getCurrentContext();
+        // 从上下文获取 request
+        HttpServletRequest request = requestContext.getRequest();
+        // 从 request 获取参数 a
+        String a = request.getParameter("a");
+        // 如果参数 a 为空
+        if (StringUtils.isBlank(a)) {
+            LOGGER.info(">>>>>>>>>>>>>>>> 参数 a 为空！ <<<<<<<<<<<<<<<<");
+            // 禁止路由，禁止访问下游服务
+            requestContext.setSendZuulResponse(false);
+            // 设置 responseBody，供 postFilter 使用
+            requestContext.setResponseBody("{\"status\": 500, \"message\": \"参数 a 为空！\"}");
+            // 用于下游 Filter 判断是否执行
+            requestContext.set("logic-is-success", false);
+            // Filter 结束
+            return null;
+        }
+        requestContext.set("logic-is-success", true);
+        return null;
+    }
+}
+```
+
+***ThirdPreFilter***
+```java
+public class ThirdPreFilter extends ZuulFilter {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ThirdPreFilter.class);
+
+    @Override
+    public String filterType() {
+        return FilterConstants.PRE_TYPE;
+    }
+
+    @Override
+    public int filterOrder() {
+        return 3;
+    }
+
+    @Override
+    public boolean shouldFilter() {
+        RequestContext context = RequestContext.getCurrentContext();
+        // 获取上下文中的 logic-is-success 中的值，用于判断当前 filter 是否执行
+        return (boolean) context.get("logic-is-success");
+    }
+
+    @Override
+    public Object run() throws ZuulException {
+        LOGGER.info(">>>>>>>>>>>>> ThirdPreFilter ！ <<<<<<<<<<<<<<<<");
+        // 获取上下文
+        RequestContext requestContext = RequestContext.getCurrentContext();
+        // 从上下文获取 request
+        HttpServletRequest request = requestContext.getRequest();
+        // 从 request 获取参数 a
+        String a = request.getParameter("b");
+        // 如果参数 a 为空
+        if (StringUtils.isBlank(a)) {
+            LOGGER.info(">>>>>>>>>>>>>>>> 参数 b 为空！ <<<<<<<<<<<<<<<<");
+            // 禁止路由，禁止访问下游服务
+            requestContext.setSendZuulResponse(false);
+            // 设置 responseBody，供 postFilter 使用
+            requestContext.setResponseBody("{\"status\": 500, \"message\": \"参数 b 为空！\"}");
+            // 用于下游 Filter 判断是否执行
+            requestContext.set("logic-is-success", false);
+            // Filter 结束
+            return null;
+        }
+        requestContext.set("logic-is-success", true);
+        return null;
+    }
+}
+```
+
+***PostFilter***
+```java
+
+public class PostFilter extends ZuulFilter {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PostFilter.class);
+
+    @Override
+    public String filterType() {
+        return FilterConstants.POST_TYPE;
+    }
+
+    @Override
+    public int filterOrder() {
+        return 0;
+    }
+
+    @Override
+    public boolean shouldFilter() {
+        return true;
+    }
+
+    @Override
+    public Object run() throws ZuulException {
+        LOGGER.info(">>>>>>>>>>>>>>>>>>> Post Filter! <<<<<<<<<<<<<<<<");
+        RequestContext context = RequestContext.getCurrentContext();
+        // 处理返回中文乱码
+        context.getResponse().setCharacterEncoding("UTF-8");
+        // 获取上下文保存的 responseBody
+        String responseBody = context.getResponseBody();
+        // 如果 responseBody 不为空，则证明流程中有异常发生
+        if (StringUtils.isNotBlank(responseBody)) {
+            // 设置返回状态码
+            context.setResponseStatusCode(500);
+            // 替换响应报文
+            context.setResponseBody(responseBody);
+        }
+        return null;
+    }
+}
+```
+
+访问 http://localhost:8989/provider/add 、http://localhost:8989/provider/add?a=1 、http://localhost:8989/provider/add?a=1&b=1 ，查看控制台
+
+控制台：
+```
+2019-02-18 14:09:44.890  INFO 5800 --- [nio-8989-exec-7] c.l.g.z.s.filter.FirstPreFilter          : >>>>>>>>>>>>>>>>> 自定义 Filter，类型为 pre！ <<<<<<<<<<<<<<<<<<
+2019-02-18 14:09:44.890  INFO 5800 --- [nio-8989-exec-7] c.l.g.z.s.filter.SecondPreFilter         : >>>>>>>>>>>>> SecondPreFilter ！ <<<<<<<<<<<<<<<<
+2019-02-18 14:09:44.890  INFO 5800 --- [nio-8989-exec-7] c.l.g.z.s.filter.SecondPreFilter         : >>>>>>>>>>>>>>>> 参数 a 为空！ <<<<<<<<<<<<<<<<
+2019-02-18 14:09:44.890  INFO 5800 --- [nio-8989-exec-7] c.l.g.z.s.filter.PostFilter              : >>>>>>>>>>>>>>>>>>> Post Filter! <<<<<<<<<<<<<<<<
+```
+```
+2019-02-18 14:10:13.004  INFO 5800 --- [nio-8989-exec-5] c.l.g.z.s.filter.FirstPreFilter          : >>>>>>>>>>>>>>>>> 自定义 Filter，类型为 pre！ <<<<<<<<<<<<<<<<<<
+2019-02-18 14:10:13.004  INFO 5800 --- [nio-8989-exec-5] c.l.g.z.s.filter.SecondPreFilter         : >>>>>>>>>>>>> SecondPreFilter ！ <<<<<<<<<<<<<<<<
+2019-02-18 14:10:13.004  INFO 5800 --- [nio-8989-exec-5] c.l.g.z.s.filter.ThirdPreFilter          : >>>>>>>>>>>>> ThirdPreFilter ！ <<<<<<<<<<<<<<<<
+2019-02-18 14:10:13.004  INFO 5800 --- [nio-8989-exec-5] c.l.g.z.s.filter.ThirdPreFilter          : >>>>>>>>>>>>>>>> 参数 b 为空！ <<<<<<<<<<<<<<<<
+2019-02-18 14:10:13.005  INFO 5800 --- [nio-8989-exec-5] c.l.g.z.s.filter.PostFilter              : >>>>>>>>>>>>>>>>>>> Post Filter! <<<<<<<<<<<<<<<<
+```
+```
+2019-02-18 14:10:28.488  INFO 5800 --- [nio-8989-exec-9] c.l.g.z.s.filter.FirstPreFilter          : >>>>>>>>>>>>>>>>> 自定义 Filter，类型为 pre！ <<<<<<<<<<<<<<<<<<
+2019-02-18 14:10:28.488  INFO 5800 --- [nio-8989-exec-9] c.l.g.z.s.filter.SecondPreFilter         : >>>>>>>>>>>>> SecondPreFilter ！ <<<<<<<<<<<<<<<<
+2019-02-18 14:10:28.488  INFO 5800 --- [nio-8989-exec-9] c.l.g.z.s.filter.ThirdPreFilter          : >>>>>>>>>>>>> ThirdPreFilter ！ <<<<<<<<<<<<<<<<
+2019-02-18 14:10:28.500  INFO 5800 --- [nio-8989-exec-9] c.l.g.z.s.filter.PostFilter              : >>>>>>>>>>>>>>>>>>> Post Filter! <<<<<<<<<<<<<<<<
+```
+
+返回值：
+```json
+{"status": 500, "message": "参数 a 为空！"}
+```
+```json
+{"status": 500, "message": "参数 b 为空！"}
+```
+```
+result is : a + b = 2
+```
+
+由此验证自定义 Zuul Filter 成功。
