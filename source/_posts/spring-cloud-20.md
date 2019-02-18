@@ -29,6 +29,9 @@ Zuul 底层为 Servlet，本质组件是一系列 Filter 构成的责任链。
 
 ## Zuul Server
 
+***Server源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-zuul/spring-cloud-zuul-simple***
+***Client源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-zuul/spring-cloud-zuul-provider-service-simple***
+
 ### pom、yml
 ```xml
 <dependencies>
