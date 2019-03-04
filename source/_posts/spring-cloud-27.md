@@ -99,6 +99,8 @@ Spring Cloud Config 是一个集中化、外部配置的分布式系统，由服
 在仓库中，新建一个文件夹：`config-simple`，在文件夹内新建 3 个文件：`config-simple-dev.yml`、`config-simple-test.yml`、`config-simple-prod.yml`
 ![Spring Cloud Simple Config](/images/spring-cloud/config/config-repo-simple.png)
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-config/spring-cloud-config-simple***
+
 ## config server
 
 ```xml
