@@ -110,3 +110,96 @@ server:
 ---
 
 # 关系型数据库实现配置中心
+
+架构图：
+![config server mysql](/images/spring-cloud/config/config-db.png)
+
+公共依赖
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+</dependencies>
+```
+
+## mysql config server
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-config-server</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+    </dependency>
+</dependencies>
+```
+
+```yml
+server:
+  port: 9090
+spring:
+  application:
+    name: spring-cloud-customer-repo-mysql
+  cloud:
+    config:
+      server:
+        jdbc:
+          sql: SELECT `KEY`, `VALUE` FROM PROPERTIES WHERE application = ? NAD profile = ? AND label = ?
+      label: master
+  profiles:
+    active: jdbc
+  datasource:
+    url: jdbc:mysql:///springcloud?useUnicode=true&charsetEncoding=UTF-8
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+logging:
+  level:
+    org.springframework.jdbc.core: debug
+    org.springframework.jdbc.core.StatementCreatorUtils: Trace
+```
+
+其余配置、config client 与之前一致即可。
+
+## 验证
+启动 config server、config client，可以看到，config server 打印日志如下：
+```
+...
+
+Executing prepared SQL query
+Executing prepared SQL statement [SELECT `KEY`, `VALUE` FROM PROPERTIES WHERE application = ? AND profile = ? AND lable = ?]
+Setting SQL statement parameter value: column index 1, parameter value [config-simple], value class [java.lang.String], SQL type unknown
+Setting SQL statement parameter value: column index 2, parameter value [dev], value class [java.lang.String], SQL type unknown
+Setting SQL statement parameter value: column index 3, parameter value [master], value class [java.lang.String], SQL type unknown
+Executing prepared SQL query
+Executing prepared SQL statement [SELECT `KEY`, `VALUE` FROM PROPERTIES WHERE application = ? AND profile = ? AND lable = ?]
+Setting SQL statement parameter value: column index 1, parameter value [config-simple], value class [java.lang.String], SQL type unknown
+Setting SQL statement parameter value: column index 2, parameter value [default], value class [java.lang.String], SQL type unknown
+Setting SQL statement parameter value: column index 3, parameter value [master], value class [java.lang.String], SQL type unknown
+Executing prepared SQL query
+Executing prepared SQL statement [SELECT `KEY`, `VALUE` FROM PROPERTIES WHERE application = ? AND profile = ? AND lable = ?]
+Setting SQL statement parameter value: column index 1, parameter value [application], value class [java.lang.String], SQL type unknown
+Setting SQL statement parameter value: column index 2, parameter value [dev], value class [java.lang.String], SQL type unknown
+Setting SQL statement parameter value: column index 3, parameter value [master], value class [java.lang.String], SQL type unknown
+Executing prepared SQL query
+Executing prepared SQL statement [SELECT `KEY`, `VALUE` FROM PROPERTIES WHERE application = ? AND profile = ? AND lable = ?]
+Setting SQL statement parameter value: column index 1, parameter value [application], value class [java.lang.String], SQL type unknown
+Setting SQL statement parameter value: column index 2, parameter value [default], value class [java.lang.String], SQL type unknown
+Setting SQL statement parameter value: column index 3, parameter value [master], value class [java.lang.String], SQL type unknown
+
+...
+```
+
+访问 http://localhost:9091/get-config-info ，返回数据如下：
+![spring cloud config mysql](/images/spring-cloud/config/config-mysql-repo.png)
