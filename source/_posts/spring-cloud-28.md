@@ -12,6 +12,8 @@ tags: [SpringCloud,CloudConfig]
 
 # 手动刷新
 
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-config/spring-cloud-config-refresh***
+
 手动刷新的 config server 依然选用示例中的 `spring-cloud-config-simple-server`
 
 ## config client
@@ -138,6 +140,8 @@ dev 环境，git 版 spring cloud config，使用手动刷新。。。
 ---
 
 # 半自动刷新
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-config/spring-cloud-config-bus***
 
 半自动刷新依赖于 Spring Cloud Bus 总线，而 Bus 总线依赖于 RabbitMQ。 Spring Cloud Bus 刷新配置的流程图：
 ![Spring Cloud Bus 流程图](/images/spring-cloud/config/spring-cloud-bus.png)
