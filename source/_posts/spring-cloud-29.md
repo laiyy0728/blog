@@ -1,5 +1,5 @@
 ---
-title: Spring Cloud 微服务（29） --- Spring Cloud Config(三) <BR> git 版 coofnig 配置
+title: Spring Cloud 微服务（29） --- Spring Cloud Config(三) <BR> git 版 coofnig 配置、使用数据库实现配置中心
 date: 2019-03-05 11:28:06
 updated: 2019-03-05 11:28:06
 categories: Java
@@ -7,6 +7,8 @@ tags:  [SpringCloud, CloudConfig]
 ---
 
 除了使用 git 作为配置文件的管理中心外，也可以使用关系型数据库、非关系型数据库实现配置中心，以及配置中心的扩展。包括：客户端自动刷新、客户端回退、安全认证、客户端高可用、服务端高可用等。
+
+<!-- more -->
 
 ---
 
@@ -203,3 +205,90 @@ Setting SQL statement parameter value: column index 3, parameter value [master],
 
 访问 http://localhost:9091/get-config-info ，返回数据如下：
 ![spring cloud config mysql](/images/spring-cloud/config/config-mysql-repo.png)
+
+---
+
+# 非关系数据库实现配置中心
+
+以 mongodb 为例，需要 spring cloud config server mongodb 依赖，github 地址：https://github.com/spring-cloud-incubator/spring-cloud-config-server-mongodb
+
+## config server monngodb
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-config-server</artifactId>
+    </dependency>
+
+    <!-- mongogdb 在 spring cloud config server 的依赖，这个依赖是快照依赖，需要指定 spring 的仓库 -->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-config-server-mongodb</artifactId>
+        <version>0.0.3.BUILD-SNAPSHOT</version>
+    </dependency>
+</dependencies>
+```
+
+```yml
+server:
+  port: 9090
+spring:
+  application:
+    name: spring-cloud-customer-repo-mongodb
+  data:
+    mongodb:
+      uri: mongodb://192.168.67.133/springcloud # mongo 数据库地址
+```
+
+```java
+@SpringBootApplication
+@EnableMongoConfigServer  // 一定注意，不能写为 EnableConfigServer，一定要是 MongooConfigServer
+public class SpringCloudCustomerRepoMongodbApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringCloudCustomerRepoMongodbApplication.class, args);
+    }
+
+}
+```
+
+## mongo 测试数据
+
+collection 名称：springcloud
+
+数据：
+```json
+{
+	"label": "master",
+	"profile": "prod",
+	"source": {
+		"com": {
+			"laiyy": {
+				"gitee": {
+					"config": "I am the mongdb configuration file from dev environment. I will edit."
+				}
+			}
+		}
+	}
+}
+```
+
+## config client
+
+```yml
+spring:
+  cloud:
+    config:
+      label: master
+      uri: http://localhost:9090
+      name: springcloud # 这里指定的是 collection name
+      profile: prod
+```
+
+## 验证
+
+***config client 与之前的一致***
+
+访问 http://localhost:9091/get-config-info ，返回值为：
+![mongo result](/images/spring-cloud/config/mongo-result.png)
