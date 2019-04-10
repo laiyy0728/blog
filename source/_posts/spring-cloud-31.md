@@ -1,5 +1,5 @@
 ---
-title: Spring Cloud 微服务（31） --- Spring Cloud Config(五) <BR> 客户端高可用
+title: Spring Cloud 微服务（31） --- Spring Cloud Config(五) <BR> 高可用
 date: 2019-03-07 10:29:50
 updated: 2019-03-07 10:29:50
 categories:
