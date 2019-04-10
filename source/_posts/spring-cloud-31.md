@@ -1,5 +1,5 @@
 ---
-title: Spring Cloud 微服务（31） --- Spring Cloud Config(五) <BR> 高可用
+title: Spring Cloud 微服务（31） --- Spring Cloud Config(五) <BR> 客户端高可用
 date: 2019-03-07 10:29:50
 updated: 2019-03-07 10:29:50
 categories:
@@ -14,6 +14,8 @@ tags:
 <!-- more -->
 
 # 客户端高可用
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-config/spring-cloud-config-ha/spring-cloud-config-ha-client***
 
 `客户端高可用` 主要解决当前服务端不可用哪个的情况下，客户端依然可用正常启动。从客户端触发，不是增加配置中心的高可用性，而是降低客户端对配置中心的依赖程度，从而提高整个分布式架构的健壮性。
 
@@ -423,3 +425,124 @@ Fetching config from server at : http://localhost:9090
 访问 http://localhost:9015/config 正常返回信息。
 
 由此验证`客户端高可用`成功
+
+---
+
+# 服务端高可用
+
+服务端高可用，一般情况下是通过与注册中心结合实现。通过 Ribbon 的负载均衡选择 Config Server 进行连接，来获取配置信息。
+
+***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-config/spring-cloud-config-ha/spring-cloud-config-ha-server***
+
+eureka 选择使用 `spring-cloud-eureka-server-simple`
+
+## config server
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-config-server</artifactId>
+    </dependency>
+</dependencies>
+```
+
+```yml
+spring:
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://gitee.com/laiyy0728/config-repo.git
+          search-paths: config-simple
+  application:
+    name: spring-cloud-config-ha-server-app
+server:
+  port: 9090
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+```
+
+```java
+@SpringBootApplication
+@EnableConfigServer
+@EnableDiscoveryClient
+public class SpringCloudConfigHaServerConfigApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringCloudConfigHaServerConfigApplication.class, args);
+    }
+
+}
+```
+
+## config client
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-config-client</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+    </dependency>
+</dependencies>
+```
+
+**application.yml**
+```yml
+server:
+  port: 9016
+
+spring:
+  application:
+    name: spring-cloud-config-ha-server-client
+```
+
+**bootstrap.yml**
+```yml
+spring:
+  cloud:
+    config:
+      label: master
+      name: config-simple
+      profile: dev
+      discovery:
+        enabled: true # 是否从注册中心获取 config server
+        service-id: spring-cloud-config-ha-server-app # 注册中心 config server 的 serviceId
+eureka:
+  client:
+    service-url:
+      defauleZone: http://localhost:8761/eureka/
+```
+
+```java
+@SpringBootApplication
+@RestController
+public class SpringCloudConfigHaServerClientApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringCloudConfigHaServerClientApplication.class, args);
+    }
+
+    @Value("${com.laiyy.gitee.config}")
+    private String config;
+
+    @GetMapping(value = "/config")
+    public String getConfig(){
+        return config;
+    }
+
+}
+```
+
+启用验证：访问 http://localhost:9016/config ,返回值如下：
+![config-client-ha-result](/images/spring-cloud/config/client-ha-result.png)
