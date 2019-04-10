@@ -13,6 +13,7 @@ Spring Cloud Config 客户端使用 JWT 身份验证方法代替标准的基本�
 - 服务端返回 JWT Token
 - 客户端查询服务端的配置需要在 header 中带上 Token 令牌进行认证
 
+
 <!-- more -->
 
 ***源码：https://gitee.com/laiyy0728/spring-cloud/tree/master/spring-cloud-config/spring-cloud-config-jwt***
