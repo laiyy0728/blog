@@ -232,6 +232,8 @@ SkyWalking 依赖环境：
 
 ## 下载 elasticsearch_5.6.10 版本
 
+***注意：一定要用 5.x 的 elasticsearch，否则会出现版本问题！***
+
 解压安装后，进入 `config/elasticsearch.yml` 文件，修改 `network.host` 为 `0.0.0.0`。elasticsearch 不允许 root 用户启动，建立新用户并赋权：
 ```shell
 useradd es
@@ -268,3 +270,48 @@ sysctl -p
 后台启动 es： `./bin/elasticsearch -d`
 
 查看 es 日志：`tail -f logs/elasticsearch.log`，正常启动。
+
+浏览器访问 elasticsearch，可见，默认的 cluster name 为 `elasticsearch`：
+![elasticsearch](/images/spring-cloud/apm/elasticsearch.png)
+
+## SkyWalking 目录结构
+
+![SkyWalking 目录结构](/images/spring-cloud/apm/skywalking-dir-tree.png)
+
+- agent：探针相关
+- bin：collectorService、webappService 启动脚本，其中 startup.* 是同事启动两个脚本的合并命令
+- config：Collector 的相关配置信息
+- log：collector、web 的日志文件
+- webapp：存放 SkyWalking 展示 UI 的 jar 和配置文件
+
+SkyWalking 的默认端口为：8080、10800、11800、12800 等，如果要修改端口，需要修改 config 目录下的 application.yml、webapp 下的 webapp.yml。
+
+修改 `config/application.yml` 文件，clusterName 与 elasticsearch 的 cluster name 一致，其余采用默认设置。
+![application.yml](/images/spring-cloud/apm/application.yml.png)
+
+## 启动 SkyWalking
+
+启动 SkyWalking：
+```shell
+./bin/startup.sh
+```
+
+![启动 SkyWalking](/images/spring-cloud/apm/startup-success.png)
+
+访问 SkyWalking：
+![访问 SkyWalking](/images/spring-cloud/apm/skywalking-login-page.png)
+
+默认 用户名/密码 为：admin/admin
+
+![SkyWalking Dashboard](/images/spring-cloud/apm/skywalking-dashboard.png)
+
+---
+
+# 监控项目
+
+## 创建目录
+
+创建四个目录，分别对应：consumer、provider、zuul、eureka-server 四个应用，每个应用使用一个对应的 agent 进行启动，其中 agent 是 SkyWalking 的 agent 目录。
+
+修改 `agent.config` 文件中 `agent.application_code`，这项配置代表应用。对应修改为 `consumer`、`provider`、`zuul`、`eureka`。将 eureka、zuul、consumer、provider 打包为 jar，上传到对应目录中。
+
