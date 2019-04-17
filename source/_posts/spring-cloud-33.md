@@ -315,3 +315,54 @@ SkyWalking 的默认端口为：8080、10800、11800、12800 等，如果要修�
 
 修改 `agent.config` 文件中 `agent.application_code`，这项配置代表应用。对应修改为 `consumer`、`provider`、`zuul`、`eureka`。将 eureka、zuul、consumer、provider 打包为 jar，上传到对应目录中。
 
+## 修改 es 内存配置
+
+elasticsearch 默认 JVM 内存为 2g，如果虚拟机内存过小，无法启动。如果略大于 JVM 内存，启动后无法启动其他组件。所以需要修稿 elasticsearch 的默认 JVM 内存。修改 `$ES_HOME/config/jvm.options`:
+![es jvm 参数](/images/spring-cloud/apm/es-jvm.png)
+
+修改后重启 es、SkyWalking
+
+使用 `top` 命令查看使用内存最高的应用，使用 `free` 命令，查看内存总用量、剩余内存。
+![free top 命令](/images/spring-cloud/apm/free-top.png)
+
+## 依次启动四个应用
+
+启动时需要指定 JVM 内存，防止出现内存不够的情况。 
+`-Xms` 指定最小内存，`-Xmx` 指定最大内存
+
+eureka
+`java -javaagent:/usr/local/src/soft/eureka/agent/skywalking-agent.jar -jar /usr/local/src/soft/eureka/spring-cloud-eureka-server-simple-0.0.1-SNAPSHOT.jar -Xms256m -Xmx256m`
+
+provider
+`java -javaagent:/usr/local/src/soft/provider/agent/skywalking-agent.jar -jar /usr/local/src/soft/provider/spring-cloud-apm-skywalking-provider-0.0.1-SNAPSHOT.jar -Xms256m -Xmx256m`
+
+consumer
+`java -javaagent:/usr/local/src/soft/consumer/agent/skywalking-agent.jar -jar /usr/local/src/soft/consumer/spring-cloud-apm-skywalking-consumer-0.0.1-SNAPSHOT.jar -Xms256m -Xmx256m`
+
+zuul
+`java -javaagent:/usr/local/src/soft/zuul/agent/skywalking-agent.jar -jar /usr/local/src/soft/zuul/spring-cloud-apm-skywalking-zuul-0.0.1-SNAPSHOT.jar -Xms256m -Xmx256m`
+
+## 确认启动成功
+
+使用 `jps` 命令查看启动进程：
+![jps](/images/spring-cloud/apm/jps.png)
+
+查看剩余内存是否满足正常运行：
+![free](/images/spring-cloud/apm/free.png)
+
+## 验证 SkyWalking
+
+启动成功后访问eureka： http://192.168.67.135:8761/
+![eureka](/images/spring-cloud/apm/eureka.png)
+
+访问 SkyWalking： 
+![SkyWalking](/images/spring-cloud/apm/skywalking-dashboard-1.png)
+
+可见 4 个 app 都启动成功了。使用 zuul 访问 consumer，调用 provider： 
+![zuul](/images/spring-cloud/apm/zuul.png)
+
+再次查看 SkyWalking：
+![SkyWalking](/images/spring-cloud/apm/skywalking-dashboard-2.png)
+
+在 service 选项卡中可以看到每个 service 的具体调用情况
+![service](/images/spring-cloud/apm/service.png)
