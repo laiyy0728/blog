@@ -24,7 +24,7 @@ url: https://www.laiyy.top # 主站
 # 根路径
 root: /
 # 静态页面路径规则
-permalink: :category/:year/:month-:day/:title.html
+permalink: :category/:title.html
 
 permalink_defaults:
 
@@ -39,7 +39,7 @@ i18n_dir: :language
 skip_render:
 
 # Writing
-new_post_name: :title.md # File name of new posts
+new_post_name: :category/:title.md # File name of new posts
 default_layout: post
 titlecase: false # Transform title into titlecase
 external_link: true # Open external links in new tab
