@@ -1,9 +1,9 @@
 ---
-title: RocketMQ（1） 环境搭建
+title: RocketMQ（1） 环境搭建、基础运行
 date: 2019-04-21 16:44:07
 updated: 2019-04-21 16:44:07
-categories:
-tags:
+categories: rocketmq
+tags: [RocketMQ, MQ]
 ---
 
 MQ 全称为 `Message Queue`，是一种应用程序程序对应用程序的通信方式，应用程序通过读写出入队列的消息来通信，而无需专用连接来连接它们。消息传递指的是程序之间通过在消息中发送数据来进行通信，而不是通过直接调用来通信，直接调用通常用于诸如远程过程调用的技术。
