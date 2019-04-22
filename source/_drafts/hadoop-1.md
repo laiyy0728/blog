@@ -57,3 +57,7 @@ MapReduce 将计算过程分为两个阶段：Map 阶段、Reduce 阶段
 
 ## 大数据生态体系
 ![大数据生态体系](/images/hadoop/life-cycle.png)
+
+---
+
+# Hadoop 环境搭建
