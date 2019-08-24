@@ -22,6 +22,11 @@ tags:
 
 转换字符串。快捷键：`Alt + M`
 
+# material theme ui
+
+修改 idea 默认 UI
+![theme ui](/images/theme-ui.png)
+
 # Grep Console
 
 定义控制台打印日志格式、颜色
