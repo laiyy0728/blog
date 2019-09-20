@@ -1,5 +1,5 @@
 ---
-title: Hadoop 学习（1）  <br /> 基础概念、基础环境搭建安装
+title: Hadoop 学习（1）  <br /> 基础概念、基础环境搭建安装、官方示例
 categories: hadoop
 date: 2019-09-17 23:19:13
 updated: 2019-09-17 23:19:13
@@ -170,19 +170,19 @@ DNS1=192.168.52.2
 vim /etc/sysconfig/network
 
 NETWORKING=yes
-HOSTNAME=hadoop_01
+HOSTNAME=hadoop01
 ```
 
 ```
 vim /etc/hosts
 
-192.168.52.100 hadoop_01
-192.168.52.101 hadoop_02
-192.168.52.102 hadoop_03
-192.168.52.103 hadoop_04
+192.168.52.100 hadoop01
+192.168.52.101 hadoop02
+192.168.52.102 hadoop03
+192.168.52.103 hadoop04
 ```
 
-其中，`hosts` 文件中的 `hadoop_02`、`hadoop_03`、`hadoop_04` 暂时还没有，先配置上，为后面集群做准备。
+其中，`hosts` 文件中的 `hadoop02`、`hadoop03`、`hadoop04` 暂时还没有，先配置上，为后面集群做准备。
 
 ## 安装 JDK、Hadoop
 
@@ -223,3 +223,158 @@ source /etc/profile
 ```
 
 使用 `java`、`javac`、`hadoop` 命令，测试环境变量设置是否成功
+
+
+---
+
+# 官方案例[grep]
+
+## 创建一个用于输入的文件夹
+
+任意找一个地方，创建一个 input 文件夹，本例使用与 hadoop 统计目录。
+```
+mkdir -p demo/input
+```
+
+<!-- more -->
+
+拷贝 hadoop/etc/hadoop/*.xml，到 input 文件夹，用于 grep 案例的输入源
+
+## 执行官方 demo
+
+在 demo 文件夹下，执行 hadoop 官方 demo
+```
+hadoop jar ../hadoop-2.7.2/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.2.jar grep input/ output 'dfs[a-z.]+'
+```
+
+解释：
+> hadoop：以 hadoop 命令执行
+> jar：执行的是 jar 包
+> xx.jar：具体 jar 包，本例是 2.7.2 版本的官方 hadoop MapReduce 示例
+> grep：由于有多个示例，选择执行哪个示例，此处是执行 `grep` 案例
+> input：指明输入示例的文件夹
+> output：指明输出结果的文件夹，且这个文件夹必须不存在，否则会报`文件夹已存在`的错误
+> dfs[a-z.]+：正则过滤
+
+## 查看控制台输出
+```
+19/09/20 14:29:11 INFO Configuration.deprecation: session.id is deprecated. Instead, use dfs.metrics.session-id
+19/09/20 14:29:11 INFO jvm.JvmMetrics: Initializing JVM Metrics with processName=JobTracker, sessionId=
+19/09/20 14:29:11 INFO input.FileInputFormat: Total input paths to process : 8
+19/09/20 14:29:11 INFO mapreduce.JobSubmitter: number of splits:8
+19/09/20 14:29:11 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_local1540340101_0001
+
+...
+
+19/09/20 14:29:13 INFO mapred.LocalJobRunner: reduce > reduce
+19/09/20 14:29:13 INFO mapred.Task: Task 'attempt_local801724989_0002_r_000000_0' done.
+19/09/20 14:29:13 INFO mapred.LocalJobRunner: Finishing task: attempt_local801724989_0002_r_000000_0
+19/09/20 14:29:13 INFO mapred.LocalJobRunner: reduce task executor complete.
+19/09/20 14:29:14 INFO mapreduce.Job: Job job_local801724989_0002 running in uber mode : false
+19/09/20 14:29:14 INFO mapreduce.Job:  map 100% reduce 100%
+19/09/20 14:29:14 INFO mapreduce.Job: Job job_local801724989_0002 completed successfully
+19/09/20 14:29:14 INFO mapreduce.Job: Counters: 30
+	File System Counters
+		FILE: Number of bytes read=1158544
+		FILE: Number of bytes written=2216290
+		FILE: Number of read operations=0
+		FILE: Number of large read operations=0
+		FILE: Number of write operations=0
+	Map-Reduce Framework
+		Map input records=1
+		Map output records=1
+		Map output bytes=17
+		Map output materialized bytes=25
+		Input split bytes=120
+		Combine input records=0
+		Combine output records=0
+		Reduce input groups=1
+		Reduce shuffle bytes=25
+		Reduce input records=1
+		Reduce output records=1
+		Spilled Records=2
+		Shuffled Maps =1
+		Failed Shuffles=0
+		Merged Map outputs=1
+		GC time elapsed (ms)=18
+		Total committed heap usage (bytes)=273203200
+	Shuffle Errors
+		BAD_ID=0
+		CONNECTION=0
+		IO_ERROR=0
+		WRONG_LENGTH=0
+		WRONG_MAP=0
+		WRONG_REDUCE=0
+	File Input Format Counters 
+		Bytes Read=123
+	File Output Format Counters 
+		Bytes Written=23
+```
+
+## 检查执行结果
+
+```
+[root@hadoop01 demo]# ll output/
+总用量 4
+-rw-r--r--. 1 root root 11 9月  20 14:29 part-r-00000
+-rw-r--r--. 1 root root  0 9月  20 14:29 _SUCCESS
+```
+
+看到生成了两个文件：`part-r-00000`、`_SUCCESS`。
+
+其中，`_SUCCESS` 文件大小为 0，没有任何内容，只是标记当前执行成功了。
+
+查看 `part-r-00000` 文件的内容
+```
+[root@hadoop01 demo]# cat output/part-r-00000 
+1	dfsadmin
+```
+
+可以看到统计到的符合正则过滤的条件的单词，只有一个，为 `dfsadmin`。此时如果再次执行刚才的 hadoop 任务，控制台将报错如下：
+```
+19/09/20 14:42:58 INFO jvm.JvmMetrics: Cannot initialize JVM Metrics with processName=JobTracker, sessionId= - already initialized
+org.apache.hadoop.mapred.FileAlreadyExistsException: Output directory file:/opt/module/demo/output already exists
+	at org.apache.hadoop.mapreduce.lib.output.FileOutputFormat.checkOutputSpecs(FileOutputFormat.java:146)
+	at org.apache.hadoop.mapreduce.JobSubmitter.checkSpecs(JobSubmitter.java:266)
+	at org.apache.hadoop.mapreduce.JobSubmitter.submitJobInternal(JobSubmitter.java:139)
+```
+
+
+---
+
+# 官方案例[word count]
+
+## 创建输入源
+
+创建一个 `wcinput` 用于 word count 案例的输入源，并创建一个 `wc.input` 文件，输入一些字符串
+```
+[root@hadoop01 demo]# mkdir wcinput
+[root@hadoop01 demo]# cd wcinput/
+[root@hadoop01 wcinput]# vim wc.input
+hadoop yarn
+hadoop mapreduce
+hadoop hdfs
+laiyy
+laiyy0728
+```
+
+## 执行 word count 示例
+
+```
+ hadoop jar ../hadoop-2.7.2/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.2.jar wordcount wcinput/ wcoutput 
+```
+
+与上例的区别仅仅是将 `grep` 换为 `wordcount`，调整了输入、输出目录，去掉了正则过滤。
+
+查看输出结果：
+```
+[root@hadoop01 demo]# cat wcoutput/part-r-00000 
+hadoop	3
+hdfs	1
+laiyy	1
+laiyy0728	1
+mapreduce	1
+yarn	1
+```
+
+可以看到每个单词出现的频率
