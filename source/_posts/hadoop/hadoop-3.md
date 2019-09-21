@@ -1,5 +1,5 @@
 ---
-title: Hadoop（3） <br/> yarn
+title: Hadoop（3） <br/> yarn、history server、logs server
 date: 2019-9-20 17:01:31
 updated: 2019-9-20 17:01:31
 categories:
@@ -103,7 +103,7 @@ sbin/yarn-daemon.sh start nodemanager
 50070：HDFS
 8088：MapReduce
 
-![map reduce 进程](/images/hadoop/map-reduce-8088.png)
+![map reduce 进程](/images/hadoop/yarn-history-and-log/map-reduce-8088.png)
 
 ## 测试 8088 的 MapReduce
 
@@ -134,7 +134,7 @@ hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.2.jar wordcount 
 > 执行结果：Job job_1568971486858_0001 completed successfully
 
 在 8088 上查看执行信息
-![yarn map reduce](/images/hadoop/yarn-map-reduce.png)
+![yarn map reduce](/images/hadoop/yarn-history-and-log/yarn-map-reduce.png)
 
 ## 配置 Yarn 历史运行服务器
 
@@ -187,17 +187,17 @@ hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.2.jar wordcount 
 访问 8088 中的 `history` 选项卡，查看历史执行记录
 
 如果出现下面的情况，是因为在本机没有在 hosts 配置 `hadoop01` 的地址，修改本机 hosts 文件，增加上 hadoop01 的映射即可
-![error history](/images/hadoop/error-history.png)
+![error history](/images/hadoop/yarn-history-and-log/error-history.png)
 
 
 配置好 hosts 后，刷新页面，即可看到该任务的执行流程
-![history success](/images/hadoop/history-success.png)
+![history success](/images/hadoop/yarn-history-and-log/history-success.png)
 
 
 ## 日志服务器
 
 Logs 选项卡可以查看整个执行过程的相关日志，此时点击 Logs 选项卡，会提示如下信息
-![没有日志服务器](/images/hadoop/no-logs.png)
+![没有日志服务器](/images/hadoop/yarn-history-and-log/no-logs.png)
 
 按照提示信息，我们需要配置 `日志服务器`
 
@@ -288,7 +288,7 @@ hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.2.jar wordcount 
 ```
 
 在 8088 上选择最后一个执行的任务，进入 `history` 选项卡，再进入 `Logs` 选项卡查看结果
-![logs](/images/hadoop/log.png)
+![logs](/images/hadoop/yarn-history-and-log/log.png)
 
 ---
 

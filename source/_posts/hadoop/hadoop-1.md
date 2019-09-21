@@ -50,7 +50,7 @@ Hadoop 底层维护多个数据副本（默认3个），所以即使 Hadoop 某�
 ## 1.x 与 2.x 的区别
 
 Hadoop 包含的模块，以及 1.X、2.X 的区别：
-![Hadoop](/images/hadoop/hadoop.png)
+![Hadoop](/images/hadoop/install/hadoop.png)
 
 
 
@@ -93,7 +93,7 @@ ResourceManager（相当于老板） > NodeManager（相当于技术总监）/Ap
 - Container：为 ApplicationMaster 服务
 > YARN 中资源的抽象，封装了节点上多维度资源，如：内存、CPU、磁盘、网络等，服务 ApplicationMaster
 
-![yarn](/images/hadoop/yarn.png)
+![yarn](/images/hadoop/install/yarn.png)
 
 ## MapReduce
 
@@ -102,11 +102,11 @@ MapReduce 将计算过程分为两个阶段：Map 阶段、Reduce 阶段
 - Map 阶段：并行处理输入数据
 - Reduce 阶段：对 Map 结果进行汇总
 
-![MapReduce](/images/hadoop/map-reduce.png)
+![MapReduce](/images/hadoop/install/map-reduce.png)
 
 
 ## 大数据生态体系
-![大数据生态体系](/images/hadoop/life-cycle.png)
+![大数据生态体系](/images/hadoop/install/life-cycle.png)
 
 ---
 
@@ -156,12 +156,12 @@ DNS1=192.168.52.2
 
 *** 注意：网关需要与虚拟机中的 NAT 网卡设置一致！***
 
-![网卡设置](/images/hadoop/network-1.png)
-![网卡设置](/images/hadoop/network-2.png)
-![网卡设置](/images/hadoop/network-3.png)
+![网卡设置](/images/hadoop/install/network-1.png)
+![网卡设置](/images/hadoop/install/network-2.png)
+![网卡设置](/images/hadoop/install/network-3.png)
 
 ***另外，也需要将 VM8 网卡设置一个静态ip，且这个静态 ip 不能与虚拟机的静态 ip一致，必须在一个网段***
-![网卡设置](/images/hadoop/network-4.png)
+![网卡设置](/images/hadoop/install/network-4.png)
 
 
 ### 修改 hostname、hosts

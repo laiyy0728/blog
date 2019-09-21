@@ -133,16 +133,16 @@ sbin/hadoop-daemon.sh start datanode
 
 
 集群的基础信息：
-![hdfs](/images/hadoop/hdfs-1.png)
+![hdfs](/images/hadoop/hdfs-info/hdfs-1.png)
 
 集群的详细信息：
-![hdfs](/images/hadoop/hdfs-2.png)
+![hdfs](/images/hadoop/hdfs-info/hdfs-2.png)
 
 DataNode 信息：
-![hdfs](/images/hadoop/hdfs-3.png)
+![hdfs](/images/hadoop/hdfs-info/hdfs-3.png)
 
 HDFS 文件管理系统：
-![hdfs](/images/hadoop/hdfs-4.png)
+![hdfs](/images/hadoop/hdfs-info/hdfs-4.png)
 
 ---
 
@@ -157,7 +157,7 @@ bin/hdfs dfs -mkdir -p /user/laiyy/input
 ```
 
 然后在 WebUI 中查看
-![hdfs](/images/hadoop/hdfs-5.png)
+![hdfs](/images/hadoop/hdfs-info/hdfs-5.png)
 
 
 ## 将 wcinput 文件夹里的东西上传到 hdfs 中
@@ -177,7 +177,7 @@ cd /opt/module/demo
 [root@hadoop01 demo]# ../hadoop-2.7.2/bin/hdfs dfs -ls -R /user/laiyy/input
 -rw-r--r--   1 root supergroup         57 2019-09-20 16:20 /user/laiyy/input/wc.input
 ```
-![hdfs](/images/hadoop/hdfs-6.png)
+![hdfs](/images/hadoop/hdfs-info/hdfs-6.png)
 
 ## 使用 hdfs 的文件路径运行 word count 示例
 
@@ -196,7 +196,7 @@ drwxr-xr-x   - root supergroup          0 2019-09-20 16:28 /user/laiyy/output
 -rw-r--r--   1 root supergroup          0 2019-09-20 16:28 /user/laiyy/output/_SUCCESS
 -rw-r--r--   1 root supergroup         55 2019-09-20 16:28 /user/laiyy/output/part-r-00000
 ```
-![hdfs](/images/hadoop/hdfs-7.png)
+![hdfs](/images/hadoop/hdfs-info/hdfs-7.png)
 
 
 ***直接查看 hdfs 中 output 中的执行结果***：
