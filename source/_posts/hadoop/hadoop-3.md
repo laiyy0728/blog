@@ -8,7 +8,7 @@ tags: [hadoop, linux]
 ---
 
 
-在上例中，测试了 HDFS 以及在 HDFS 下执行 MapReduce 示例。本例中，测试启动 YARN，并在 YARN 中执行 MapReduce 程序
+在上例中，测试了 HDFS 以及在 HDFS 下执行 MapReduce 示例。本例中，测试启动 YARN，并在 YARN 中执行 MapReduce 程序、并查看历史执行信息和执行日志信息
 
 <!-- more -->
 
