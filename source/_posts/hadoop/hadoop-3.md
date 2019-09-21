@@ -135,3 +135,177 @@ hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.2.jar wordcount 
 
 在 8088 上查看执行信息
 ![yarn map reduce](/images/hadoop/yarn-map-reduce.png)
+
+## 配置 Yarn 历史运行服务器
+
+在 8088 上，某任务执行结束后，可以在进度条后看到有一个 `history` 选项卡，此选项卡可以查看历史运行记录。但是在没有配置历史运行服务器的时候，此选项卡打开后是 404，要想看到历史执行记录，需要配置 `历史运行服务器`
+
+配置方式：
+> 1. 修改 mapred-site.xml 文件
+> 2. 启动历史服务器
+> 3. 查看 JobHistory
+
+- 修改 mapred-site.xml 文件
+
+打开 mapred-site.xml 文件，增加如下配置
+```xml
+<configuration>
+    <!-- 指定 MR 运行在 YARN 上  -->
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+
+    <!-- 修改历史服务器地址 -->
+    <property>
+        <name>mapreduce.jobhistory.address</name>
+        <value>hadoop01:10020</value>
+    </property>
+    <!-- 修改历史服务器 WebUI 地址 -->
+    <property>
+        <name>mapreduce.jobhistory.webapp.address</name>
+        <value>hadoop01:19888</value>
+    </property>
+</configuration>
+```
+
+- 启动历史服务器
+
+执行命令 `sbin/mr-jobhistory-daemon.sh start historyserver`
+
+查看启动是否成功
+
+```
+[root@hadoop01 hadoop-2.7.2]# jps
+1505 ResourceManager
+2373 JobHistoryServer
+1753 NodeManager
+1370 DataNode
+1292 NameNode
+```
+
+访问 8088 中的 `history` 选项卡，查看历史执行记录
+
+如果出现下面的情况，是因为在本机没有在 hosts 配置 `hadoop01` 的地址，修改本机 hosts 文件，增加上 hadoop01 的映射即可
+![error history](/images/hadoop/error-history.png)
+
+
+配置好 hosts 后，刷新页面，即可看到该任务的执行流程
+![history success](/images/hadoop/history-success.png)
+
+
+## 日志服务器
+
+Logs 选项卡可以查看整个执行过程的相关日志，此时点击 Logs 选项卡，会提示如下信息
+![没有日志服务器](/images/hadoop/no-logs.png)
+
+按照提示信息，我们需要配置 `日志服务器`
+
+> 日志聚集的概念：应用运行完成后，将程序运行日志的信息上传到 HDFS 系统上
+> 日志聚集的好处：可以方便的查看到程序运行详情，方便开发调试
+
+
+***注意***：
+开启日志聚集功能，需要重启 `NodeManager`、`ResourceManager`、`HistoryManager`
+
+
+开启日志聚集的步骤：
+> 1. 停止服务
+> 2. 修改配置 `yarn-site.xml`
+> 3. 重新启动
+> 4. 执行测试
+
+- 停止服务
+
+```
+[root@hadoop01 hadoop-2.7.2]# sbin/mr-jobhistory-daemon.sh stop historyserver
+stopping historyserver
+[root@hadoop01 hadoop-2.7.2]# sbin/yarn-daemon.sh stop nodemanager
+stopping nodemanager
+nodemanager did not stop gracefully after 5 seconds: killing with kill -9
+[root@hadoop01 hadoop-2.7.2]# sbin/yarn-daemon.sh stop resourcemanager
+stopping resourcemanager
+[root@hadoop01 hadoop-2.7.2]# jps
+3332 Jps
+1370 DataNode
+1292 NameNode
+```
+
+- 配置 yarn-site.xml
+
+```xml
+<configuration>
+    <!-- 修改 reduce 获取数据的方式（洗牌） -->
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+    <!-- 修改 resourcemanager 的 地址  -->
+    <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>hadoop01</value>
+    </property>
+
+    <!-- 开启日志聚集 -->
+    <property>
+        <name>yarn.log-aggregation-enable</name>
+        <value>true</value>
+    </property>
+    <!-- 日志保留时间 7 天，单位：秒 -->
+    <property>
+        <name>yarn.log-aggregation.retain-seconds</name>
+        <value>604800</value>
+    </property>
+</configuration>
+```
+
+- 重新启动
+
+```
+[root@hadoop01 hadoop-2.7.2]# sbin/yarn-daemon.sh start resourcemanager
+starting resourcemanager, logging to /opt/module/hadoop-2.7.2/logs/yarn-root-resourcemanager-hadoop01.out
+[root@hadoop01 hadoop-2.7.2]# sbin/yarn-daemon.sh start nodemanager
+starting nodemanager, logging to /opt/module/hadoop-2.7.2/logs/yarn-root-nodemanager-hadoop01.out
+[root@hadoop01 hadoop-2.7.2]# sbin/mr-jobhistory-daemon.sh start historyserver
+starting historyserver, logging to /opt/module/hadoop-2.7.2/logs/mapred-root-historyserver-hadoop01.out
+[root@hadoop01 hadoop-2.7.2]# jps
+3825 Jps
+3622 NodeManager
+3784 JobHistoryServer
+1370 DataNode
+1292 NameNode
+3373 ResourceManager
+```
+
+- 执行测试
+
+删除 hdfs 上的 output 文件夹，重新执行 word count 示例
+
+```
+bin/hdfs dfs -rm -r /user/laiyy/output
+
+hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.2.jar wordcount /user/laiyy/input /user/laiyy/output
+```
+
+在 8088 上选择最后一个执行的任务，进入 `history` 选项卡，再进入 `Logs` 选项卡查看结果
+![logs](/images/hadoop/log.png)
+
+---
+
+# 配置文件的说明
+
+Hadoop 配置文件分为量类：默认配置文件、自定义配置文件。自定义配置文件的优先级更高
+
+
+## 默认配置文件
+
+| 默认配置文件 | 存放位置 |
+| :-: | :-: |
+| core-default.xml | hadoop-common-xxx.jar/core-default.xml |
+| hdfs-default.xml | hadoop-hdfs-xxx.jar/hdfs-default.xml |
+| yarn-default.xml | hadoop-yarn-common-xxx.jar/yarn-default.xml |
+| mapred-defaultt.xml | hadoop-mapreduce-client-core-xxx.jar/mapred-default.xml |
+
+## 自定义配置文件
+
+`core-site.xml`、`hdfs-site.xml`、`yarn-site.xml`、`mapred-site.xml` 存放在 `$HADOOP_HOME/etc/hadoop` 文件夹下，可根据需求修改配置
