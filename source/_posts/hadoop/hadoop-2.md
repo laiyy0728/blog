@@ -255,4 +255,4 @@ layoutVersion=-56
 
 > DataNode 和 NameNode 在 clusterID 不一致，导致只能同时只能有一个工作的问题 
 
-![format namenode error](/images/hadoop/format-namenode-error.png)
+![format namenode error](/images/hadoop/hdfs-info/format-namenode-error.png)
