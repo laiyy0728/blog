@@ -410,4 +410,47 @@ fudge 127.127.1.0 stratum 10
 先随便修改一个时间 `date -s '2018-11-11 11:11:11'`，然后编写 crontab 脚本，每分钟从 hadoop02 上同步时间。等待一分钟后再次查看时间。
 
 
+---
+
+
+# hadoop 源码编译
+
+在 apache 的 hadoop 官方网站上，hadoop 源码是 32 位的，当需要 64 位的 hadoop 时，就需要重新编译源码
+
+需要准备：
+> 能联网的 CentOS、hadoop 源码包、jdk 64 位，apache-ant、maven、protobuf 序列化框架
+
+本例使用版本：
+> hadoop：1.7.2
+> apache-ant：1.9.9
+> maven：3.0.5
+> protobuf：2.5.0
+> jdk：1.8.0_144 64 bit
+
+另外需要安装插件：`yum install -y glibc-headers gcc-c++ make cmake openssl ncurses-devel` 
+
+***注意：所有操作必须在 root 用户下完成***
+
+## 安装 protobuf
+
+解压 protobuf-2.5.0 到 /opt/module/，进入 /opt/module/protobuf-2.5.0/ 文件夹，依次执行下列命令：
+```
+./configure
+make
+make check
+make install
+ldconfig
+```
+
+修改环境变量，设置 protobuf 的环境到 PATH 中。
+```shell
+export LD_LIBRARY_PATH=/opt/module/protobuf-2.5.0
+export PATH=$PATH:$LD_LIBRARY_PATH
+```
+
+验证 protobuf 安装是否成功 `protoc --version`
+
+## 编译源码
+
+执行 `tar -zxf hadoop-2.7.2-src.tar.gz ` 解压，然后执行 `mvn package -Pdist,native -DskipTests -Dtar`，成功后，编译好的 64 位安装包就在 hadoop-2.7.2-src/hadoop-dist/target 下。编译期间报错的话继续在此执行此命令就行。
 
