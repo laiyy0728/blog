@@ -67,3 +67,66 @@ tags: [hadoop, linux]
 
 1. 辅助 NameNode，分担其工作，如：定期合并 Fsimage(镜像文件)、Edits(编辑日志)，并推送到 NameNode
 2. 紧急情况下辅助恢复 NameNode，但是可能会丢失数据
+
+
+## HDFS 文件块大小
+
+HDFS 中的文件上是分块存储（Block），大小可通过参数配置 (dfs.blocksize)，默认在 2.X 中为 128M，1.X 为 64M
+
+HDFS 块大小设置主要取决于磁盘传输速度。
+
+------
+
+# 自带 Shell 操作
+
+## 基本语法
+
+bin/hadoop fs 具体命令
+bin/hdfs dfs 具体命令
+
+### 常用命令
+
+
+1. 启动集群
+```
+sbin/start-dfs.sh
+sbin/start-yarn.sh
+```
+
+2. 获取帮助文档
+```
+hadoop fs -help [command]
+```
+
+3. 查看 HDFS 目录信息
+```
+hadoop fs -ls
+hadoop fs -l -R [dir path] # 递归查询
+```
+
+4. 在 HDFS 上创建目录
+```
+hadoop fs -mkdir -p [your dir path]# 创建多级目录
+```
+
+5. 将本地文件剪切到 HDFS
+```
+hadoop fs -moveFromLocal [local file] [hdfs]
+```
+
+6. 追加一个文件到已经存在的文件末尾
+```
+hadoop fs -appendToFile [local file] [hdfs]
+```
+
+可能的报错信息 1：
+```
+appendToFile: Failed to APPEND_FILE /user/laiyy/haha.txt for DFSClient_NONMAPREDUCE_-1628325628_1 on 192.168.233.131 because lease recovery is in progress. Try again later.
+```
+
+可能的报错信息 2：
+```
+ava.io.IOException: Failed to replace a bad datanode on the existing pipeline due to no more good datanodes being available to try. (Nodes: current=[DatanodeInfoWithStorage[192.168.233.131:50010,DS-f6860e33-55fb-44b1-9b95-4a61b0264267,DISK], DatanodeInfoWithStorage[192.168.233.133:50010,DS-8191d13c-f9c0-4d3c-8e3d-fa29d8a76ee5,DISK]], original=[DatanodeInfoWithStorage[192.168.233.131:50010,DS-f6860e33-55fb-44b1-9b95-4a61b0264267,DISK], DatanodeInfoWithStorage[192.168.233.133:50010,DS-8191d13c-f9c0-4d3c-8e3d-fa29d8a76ee5,DISK]]). The current failed datanode replacement policy is DEFAULT, and a client may configure this via 'dfs.client.block.write.replace-datanode-on-failure.policy' in its configuration.
+```
+
+解决办法：
