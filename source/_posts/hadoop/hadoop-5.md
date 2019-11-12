@@ -53,4 +53,17 @@ tags: [hadoop, linux]
 
 > DataNode：就是 Slave。NameNode 下达命令，DataNode 执行实际操作。
 
-存储上世纪的数据块；执行数据块的读/写操作
+存储实际的数据块；执行数据块的读/写操作
+
+> Client：客户端
+
+1. 文件切分。文件上传到 HDFS 的时候，Client 将文件切分成一个一个的 Block（默认 128M）然后进行上传
+2. 与 NameNode 交互，获取文件位置信息
+3. 与 DataNode 交互，读取、写入数据
+4. 提供一些命令管理 HDFS，如 NameNode 格式化
+5. 通过一些命令访问 HDFS，如对 HDFS 的增删改查
+
+> Secondary NameNode：非 NameNode 热备，当 NameNode 挂掉后，并不会马上替换 NameNode 提供服务
+
+1. 辅助 NameNode，分担其工作，如：定期合并 Fsimage(镜像文件)、Edits(编辑日志)，并推送到 NameNode
+2. 紧急情况下辅助恢复 NameNode，但是可能会丢失数据
