@@ -282,7 +282,7 @@ org.apache.hadoop.security.AccessControlException: Permission denied: user=Admin
 
 ```java
 Configuration configuration = new Configuration();
-// 获取 hdfs 客户端
+// 获取 hdfs 客户端；参数1：NameNode地址，参数2：配置信息，参数3：hadoop 用户
 FileSystem fileSystem = FileSystem.get(new URI("hdfs://hadoop02:9000"), configuration, "root");
 // 在 hdfs 上创建路径
 fileSystem.mkdirs(new Path("/laiyy"));
