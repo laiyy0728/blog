@@ -188,3 +188,78 @@ public void testPutFileToHdfs() throws IOException {
 
 }
 ```
+
+## 文件下载
+
+```java
+@Test
+public void testGetFileFromHdfs() throws IOException {
+    // 获取输入流
+    FSDataInputStream inputStream = fileSystem.open(new Path("/log.out"));
+
+    // 获取输出流
+    FileOutputStream outputStream = new FileOutputStream(new File("d:/log/log1.out"));
+
+    // 流的对拷
+    IOUtils.copyBytes(inputStream, outputStream, configuration);
+
+    // 关闭资源
+    IOUtils.closeStream(outputStream);
+    IOUtils.closeStream(inputStream);
+}
+```
+
+## HDFS 文件定位读取
+
+先往 HDFS 中上传一个大于 128M 的文件，在管理器中查看一下文件的`分块大于1`。
+
+![大于1块的文件](/images/hadoop/client/more-block.png)
+
+可见当前文件分为了两块存储。如果此时进行下载，会将两块数据合并起来下载。但如果只想要下载其中的一部分，现在的下载方法无法实现。
+
+```java
+// 只读取第一块的数据
+public void testReadFileSeek1() throws IOException {
+    // 获取输入流
+    FSDataInputStream inputStream = fileSystem.open(new Path("/hadoop-2.7.2.tar.gz"));
+
+    FileOutputStream outputStream = new FileOutputStream("d:/log/hadoop.part1");
+
+    //  只拷贝 128 M
+    byte[] buffer = new byte[1024];
+    for (int i = 0; i < 1024 * 128; i++) {
+        inputStream.read(buffer);
+        outputStream.write(buffer);
+    }
+
+    IOUtils.closeStream(outputStream);
+    IOUtils.closeStream(inputStream);
+
+}
+
+// 再读取第二块
+public void testReadFileSeek2() throws IOException{
+    // 获取输入流
+    FSDataInputStream inputStream = fileSystem.open(new Path("/hadoop-2.7.2.tar.gz"));
+    // 指定读取开始点
+    inputStream.seek(1024 * 1024 * 128);
+    // 获取输出流
+    FileOutputStream outputStream = new FileOutputStream("d:/log/hadoop.part2");
+    // 对拷
+    IOUtils.copyBytes(inputStream, outputStream, configuration);
+
+    // 关闭资源
+    IOUtils.closeStream(outputStream);
+    IOUtils.closeStream(inputStream);
+}
+
+// 拼接两块数据
+// 由于当前是 windows 环境，使用 cmd 窗口拼接。
+// cmd 进入两块所在目录
+// 命令：type hadoop.part2 >> hadoop.part1
+// 再把 part1 的后缀改为 tar.gz 即可查看
+```
+
+
+
+
