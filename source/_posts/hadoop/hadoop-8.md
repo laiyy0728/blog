@@ -1,6 +1,5 @@
 ---
-title: Hadoop（8） <br/> NameNode 和 SecondaryNameNode、集群安全模式
-date: 2019-12-02 09:56:18
+title: Hadoop（8） <br/> DataNode
 updated: 2019-12-02 09:56:18
 categories:
     [hadoop]
