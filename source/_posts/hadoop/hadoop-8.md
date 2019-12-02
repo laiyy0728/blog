@@ -1,5 +1,5 @@
 ---
-title: Hadoop（8） <br/> DataNode
+title: Hadoop（8） <br/> DataNode、小文件存档
 updated: 2019-12-02 09:56:18
 categories:
     [hadoop]
@@ -189,3 +189,94 @@ Refresh nodes successful
 
 DataNode 与 NameNode 不同，DataNode 每个目录中存放的数据`不一样`。数据不是副本！
 
+---
+
+
+# 小文件存档
+
+## 小文件存档的弊端
+
+鉴于每个文件在 DataNode 中分块存储，每个块的元数据村存在 NameNode 中，因此 HDFS 存储小文件会非常低效。因为大量的小文件会耗尽 NameNode 中的大部分内存。
+但是，需要注意的是，存储小文件所需要的磁盘容量和数据块的大小无关。
+
+如：一个 1MB 的文件，设置为 128M 的块存储，实际使用的磁盘空间是 1MB，而不是 128MB。
+
+## 解决办法之一
+
+HDFS 存档文件或 HAR 文件，是一个更搞笑的文件存档工具，它将文件存在 HDFS 块，在减少 NameNode 内存使用的同时，允许对文件进行透明访问。
+具体来说，HDFS 存档文件对内还是一个一个的独立文件，对外（NameNode）而言却是一个整体，减少了 NameNode 的内存。
+
+> 测试
+
+在 HDFS 中，存放几个测试文件：
+![before har](/images/hadoop/client/before-har.png)
+
+文件压缩：
+```sh
+# 参数解释
+# archive：开始文件压缩
+# -archiveName：指定压缩的名称
+# -p： 从那个目录，压缩到那个目录
+[root@hadoop03 hadoop-2.7.2]# hadoop  archive -archiveName outout.har -p / /output
+```
+
+执行完成后，查看 WebUI
+![文件压缩后](/images/hadoop/client/har-suscceed.png)
+
+可以看到，文件成功输出了，但是我们看不到文件的内容是否和压缩前一致，解决办法：使用 `hadoop fs -ls -R har:///output/output.har` 命令查看
+
+```
+[root@hadoop02 hadoop-2.7.2]# hadoop fs -ls -R har:///output/outout.har
+-rw-r--r--   3 root supergroup      15429 2019-12-02 16:23 har:///output/outout.har/LICENSE.txt
+-rw-r--r--   3 root supergroup        101 2019-12-02 16:22 har:///output/outout.har/NOTICE.txt
+-rw-r--r--   3 root supergroup       1366 2019-12-02 16:22 har:///output/outout.har/README.txt
+```
+
+文档解压：
+```
+[root@hadoop02 hadoop-2.7.2]# hadoop fs -cp har:///output/outout.har /har
+```
+
+---
+
+# 回收站
+
+开启回收站功能，可以将删除的文件，在不超时的情况下，恢复原数据，起到防止误删、备份等作用。
+
+## 回收站参数设置及工作机制
+
+> 开启回收站功能参数
+
+1. `fs.trash.interval`：默认值为 0，表示 `禁用回收站`，其他值表示该文件的存活时间，单位 `分钟`
+2. `fs.trash.checkpoint.interval`：默认值为 0，表示 `检查回收站的时间间隔`，如果为 0，则该值与 `fs.trash.interval` 的时间间隔相同。单位 `分钟`
+3. 要求：`fs.trash.checkpoint.interval` <= `fs.trash.interval`
+
+修改 `core-site.xml` 文件
+```xml
+<property>
+    <name>fs.trash.interval</name>
+    <value>1</value>
+</property>
+```
+
+> 删除一条数据测试
+
+```
+[root@hadoop03 hadoop-2.7.2]# hadoop fs -rm /README.txt
+19/12/02 17:31:15 INFO fs.TrashPolicyDefault: Namenode trash configuration: Deletion interval = 1 minutes, Emptier interval = 0 minutes.
+Moved: 'hdfs://hadoop02:9000/README.txt' to trash at: hdfs://hadoop02:9000/user/root/.Trash/Current
+```
+
+> 在 WebUI 中查看回收站
+
+![trash warn](/images/hadoop/client/trash-warn.png)
+
+错误原因：进入垃圾回收站的默认用户名为 `dr.who`， 需要修改回收站用户名
+
+修改 core-site.xml
+```xml
+<property>
+    <name>hadoop.http.staticuser.user</name>
+    <value>root</value>
+</property>
+```
