@@ -1,5 +1,5 @@
 ---
-title: Hadoop（7） <br/> NameNode 和 SecondaryNameNode
+title: Hadoop（7） <br/> NameNode 和 SecondaryNameNode、集群安全模式
 date: 2019-11-28 09:24:43
 updated: 2019-11-28 09:24:48
 categories:
