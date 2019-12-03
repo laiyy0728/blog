@@ -3,7 +3,7 @@ title: Hadoop 学习（1）  <br /> 基础概念、基础环境搭建安装、�
 categories: hadoop
 date: 2019-09-17 23:19:13
 updated: 2019-09-17 23:19:13
-tags: [hadoop, linux]
+tags: [hadoop]
 ---
 
 

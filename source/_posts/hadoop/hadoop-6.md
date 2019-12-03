@@ -3,8 +3,8 @@ title: Hadoop（6） <br/> HDFS API 操作
 date: 2019-11-27 09:24:43
 updated: 2019-11-27 09:24:48
 categories:
-    [hadoop]
-tags: [hadoop]
+    [hadoop, hdfs]
+tags: [hadoop, hdfs]
 ---
 
 

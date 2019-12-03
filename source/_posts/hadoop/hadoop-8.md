@@ -2,8 +2,8 @@
 title: Hadoop（8） <br/> DataNode、小文件存档
 updated: 2019-12-02 09:56:18
 categories:
-    [hadoop]
-tags: [hadoop]
+    [hadoop, hdfs]
+tags: [hadoop, hdfs, DataNode, trash, snapshot]
 ---
 
 在了解了 NameNode、SecondaryNameNode 的工作机制、FsImage 与 Edits 数据备份、NameNode 安全机制与多目录后，对 NameNode 有了一些基础了解。在此基础之上，接下来了解一下 DataNode 的工作机制。
@@ -273,10 +273,89 @@ Moved: 'hdfs://hadoop02:9000/README.txt' to trash at: hdfs://hadoop02:9000/user/
 
 错误原因：进入垃圾回收站的默认用户名为 `dr.who`， 需要修改回收站用户名
 
-修改 core-site.xml
+修改 core-site.xml，并分发的 03、04 上，重启集群
 ```xml
-<property>
-    <name>hadoop.http.staticuser.user</name>
-    <value>root</value>
-</property>
+    <property>
+        <name>hadoop.http.staticuser.user</name>
+        <value>root</value>
+    </property>
 ```
+
+
+再次查看 WebUI：
+![trash succeed](/images/hadoop/client/trash-succeed.png)
+
+---
+
+# 快照管理
+
+快照，相当于对目录做了一次备份。此操作并 *不会立即赋值所有文件* ，而是 *指向同一个文件*。当写入发生时，才会产生新文件。
+
+## 常见命令
+
+> 开启指定目录的快照功能： `hdfs dfsadmin -allowSnapshot <path>`
+
+```
+[root@hadoop02 hadoop-2.7.2]# hdfs dfsadmin -allowSnapshot /laiyy
+Allowing snaphot on /laiyy succeeded
+```
+
+> 禁用指定目录的快照功能(默认)：`hdfs dfsadmin -disallowSnapshot <path>`
+> 对指定目录创建快照：`hdfs dfs -createSnapshot <path>`
+
+```
+[root@hadoop02 hadoop-2.7.2]# hdfs dfs -createSnapshot /laiyy
+Created snapshot /laiyy/.snapshot/s20191203-135428.244
+```
+此时在 WebUI 中是看不到快照文件的，因为这个快照文件是`隐藏文件`，输入 `/laiyy/.snapshot` 即可查看
+![看不到快照](/images/hadoop/client/no-snapshot.png)
+![看到快照](/images/hadoop/client/snapshot.png)
+![看到快照](/images/hadoop/client/snapshot1.png)
+
+> 创建目录快照并指定名称：`hdfs dfs -createSnapshot <path> <name>`
+> 快照重命名：`hdfs dfs -renameSnapshot <path> <oldName> <newName>`
+
+```
+[root@hadoop02 hadoop-2.7.2]# hdfs dfs -renameSnapshot /laiyy s20191203-135428.244 laiyy_snapshot
+```
+查看 WebUI，可以看到快照名称已经修改了。
+![修改快照名称](/images/hadoop/client/rename-snapshot.png)
+
+> 列出当前用户可以快照的目录：`hdfs lsSnapshottableDir`
+> 比较两个快照目录的不同：`hdfs snapshotDiff <path> <from> <to>`
+
+```sh
+# path 哪个路径的快照
+# from、to：比较 form 和 to 两个快照的区别
+# 此时的 from 用 "." 指代 /laiyy 文件夹，此时比较是没有任何区别的
+[root@hadoop02 hadoop-2.7.2]# hdfs snapshotDiff /laiyy . .snapshot/laiyy_snapshot
+Difference between current directory and snapshot laiyy_snapshot under directory /laiyy:
+```
+
+在已经创建快照之后，再往 /laiyy 下上传一个文件，比较结果
+
+```
+[root@hadoop02 hadoop-2.7.2]# hdfs snapshotDiff /laiyy . .snapshot/laiyy_snapshot
+Difference between current directory and snapshot laiyy_snapshot under directory /laiyy:
+M	.
+-	./LICENSE.txt
+```
+
+再创建一个新的快照，比较两个快照之间的区别
+
+```
+[root@hadoop02 hadoop-2.7.2]# hdfs snapshotDiff /laiyy .snapshot/laiyy_snapshot .snapshot/laiyy_snapshot1
+Difference between snapshot laiyy_snapshot and snapshot laiyy_snapshot1 under directory /laiyy:
+M	.
++	./LICENSE.txt
+```
+
+> 删除快照：`hdfs dfs -deleteSnapshot <path> <name>`
+
+```
+hdfs dfs -deleteSnapshot /laiyy laiyy_snapshot
+```
+
+查看 WebUI
+
+![删除快照](/images/hadoop/client/delete-snapshot.png)

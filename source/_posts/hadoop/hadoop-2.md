@@ -4,7 +4,7 @@ date: 2019-09-20 11:43:06
 updated: 2019-09-20 11:43:06
 categories:
     hadoop
-tags: [hadoop, linux]
+tags: [hadoop]
 ---
 
 

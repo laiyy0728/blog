@@ -3,8 +3,8 @@ title: Hadoop（7） <br/> NameNode 和 SecondaryNameNode、集群安全模式
 date: 2019-11-28 09:24:43
 updated: 2019-11-28 09:24:48
 categories:
-    [hadoop]
-tags: [hadoop]
+    [hadoop, hdfs]
+tags: [hadoop, hdfs, NameNode]
 ---
 
 此前通过代码了解了 HDFS API 和 I/O 操作，并了解了 HDFS 读写数据的过程，对 HDFS 整体运行过程有了初步了解。接下来就需要了解一下 NN（NameNode）、2NN（SecondaryNameNode） 的区别

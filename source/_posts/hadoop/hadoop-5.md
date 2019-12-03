@@ -3,8 +3,8 @@ title: Hadoop（5） <br/> HDFS
 date: 2019-9-22 17:01:31
 updated: 2019-11-26 17:01:31
 categories:
-    hadoop
-tags: [hadoop, linux]
+    [hadoop, hdfs]
+tags: [hadoop, hdfs]
 ---
 
 在此前，已经成功启动、测试了 hadoop 集群的功能，了解了部分 hadoop 知识，下面就需要开始针对 hadoop 进行继续深入学习 HDFS、MapReduce 的知识。
