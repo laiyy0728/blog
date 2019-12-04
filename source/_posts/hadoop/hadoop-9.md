@@ -1,5 +1,5 @@
 ---
-title: hadoop（9） Map Reduce <BR /> 
+title: hadoop（9） Map Reduce <BR />  基础概念，WordCount Demo 实现
 date: 2019-12-02 15:37:26
 updated: 2019-12-02 15:37:26
 categories:
@@ -112,7 +112,7 @@ MapReduce 编程分为三个部分： Mapper、Reducer、Driver
 
 ---
 
-# WordCount
+# WordCount(Demo)
 
 需求：给定一个文本文件 [README.txt](/file/hadoop/map-reduce/README.txt)，统计文本中每个单词出现的总次数
 
@@ -260,3 +260,86 @@ public class WordCountDriver {
 
 打开执行后的 `part-r-00000` 文件如下：
 ![word-count-result](/images/hadoop/map-reduce/word-count-result.png)
+
+## 在集群中运行
+
+将 Driver 的输入、输出路径改为参数获取方式：
+```java
+// 指定 job 的输入文件所在目录
+FileInputFormat.setInputPaths(job, new Path(args[0]));
+
+// 指定 job 的输出结果所在目录
+FileOutputFormat.setOutputPath(job, new Path(args[1]));
+```
+
+在 pom.xml 文件中增加如下配置：
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>2.3.2</version>
+            <configuration>
+                <source>1.8</source>
+                <target>1.8</target>
+            </configuration>
+        </plugin>
+
+        <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+                <descriptorRefs>
+                    <descriptorRef>jar-with-dependencies</descriptorRef>
+                </descriptorRefs>
+                <archive>
+                    <!-- 打包主类 -->
+                    <mainClass>com.laiyy.study.mapreduce.wordcount.WordCountDriver</mainClass>
+                </archive>
+            </configuration>
+            <executions>
+                <execution>
+                    <id>make-assembly</id>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>single</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+```
+
+然后使用 `mvn package` 打包后，会生成两个文件：
+
+```
+hadoop-1.0-SNAPSHOT.jar
+hadoop-1.0-SNAPSHOT-jar-with-dependencies.jar
+```
+
+第一个 jar 是没有 hadoop 依赖的，第二个 jar 是有 hadoop 依赖的。
+
+由于在 hadoop 集群上运行，所以可以使用第一个 jar。如果服务器上没有 hadoop 依赖，则使用第二个 jar 即可。
+
+将第一个 jar 上传至 hadoop，由于使用的是 hadoop 集群，所以输入、输出路径均为 HDFS 路径。
+
+运行测试：
+```
+[root@hadoop02 hadoop-2.7.2]# hadoop jar hadoop-1.0-SNAPSHOT.jar com.laiyy.study.mapreduce.wordcount.WordCountDriver /laiyy /laiyy/output
+19/12/04 14:11:07 INFO client.RMProxy: Connecting to ResourceManager at hadoop03/192.168.233.132:8032
+19/12/04 14:11:09 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.
+19/12/04 14:11:10 INFO input.FileInputFormat: Total input paths to process : 3
+19/12/04 14:11:10 INFO mapreduce.JobSubmitter: number of splits:3
+19/12/04 14:11:10 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1575438331337_0001
+19/12/04 14:11:11 INFO impl.YarnClientImpl: Submitted application application_1575438331337_0001
+19/12/04 14:11:11 INFO mapreduce.Job: The url to track the job: http://hadoop03:8088/proxy/application_1575438331337_0001/
+19/12/04 14:11:11 INFO mapreduce.Job: Running job: job_1575438331337_0001
+19/12/04 14:11:24 INFO mapreduce.Job: Job job_1575438331337_0001 running in uber mode : false
+19/12/04 14:11:24 INFO mapreduce.Job:  map 0% reduce 0%
+...
+```
+
+执行结束后，查看 HDFS 中 /laiyy/output 文件夹内容，并下载 `part-r-0000` 文件，查看文件输出.
+
+![WordCount在集群运行结果](/images/hadoop/map-reduce/wordcount-in-cluster.png)
+![WordCount在集群运行结果](/images/hadoop/map-reduce/word-count-cluster-result.png)
