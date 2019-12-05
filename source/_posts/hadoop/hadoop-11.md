@@ -1,20 +1,18 @@
 ---
-title: hadoop（11） Map Reduce <BR /> MapReduce 框架原理
+title: hadoop（11） Map Reduce <BR /> MapReduce 框架原理：InputFormat（一）<BR/> MapTask 并行度决定机制
 date: 2019-12-04 16:17:08
 updated: 2019-12-04 16:17:08
 categories:
-    [hadoop, map-reduce]
+    [hadoop, map-reduce, input-format]
 tags:
-    [hadoop, map-reduce]
+    [hadoop, map-reduce, input-format]
 ---
 
 在了解了 Hadoop 的序列化操作，实现了基本的 Bean 序列化的一个 demo，接下来分析一下 MapReduce 的框架原理。
 
 <!-- more -->
 
-# InputFormat
-
-## 切片与MapTask 并行度决定机制
+# 切片与MapTask 并行度决定机制
 
 MapTask 的并行度决定 Map 阶段的任务处理并发度，进而影响整个 Job 的处理速度。
 
@@ -23,7 +21,9 @@ MapTask 的并行度决定 Map 阶段的任务处理并发度，进而影响整�
 > MapTask 是否越多越好？
 > 什么因素会影响到 MapTask 的并行度？
 
-### MapTask并行度决定机制
+---
+
+# MapTask并行度决定机制
 
 前置概念：
 > 数据块：Block 在 HDFS 物理上把数据分成一块一块的。
@@ -44,9 +44,13 @@ MapTask 的并行度决定 Map 阶段的任务处理并发度，进而影响整�
 3. 默认情况下，切片大小等于 BlockSize
 4. 切片时不考虑数据集整体，而是逐个针对每个文件单独切片
 
-### Job 提交流程、切片源码
+---
+
+# Job 提交流程、切片源码
 
 在 Job 调用 `job.waitForCompletion` 时，进行任务提交。此方法会调用 `submit()` 方法进行真正的提交。
+
+## 任务提交流程
 
 ```java
 public boolean waitForCompletion(boolean verbose
@@ -89,7 +93,7 @@ public void submit()
 }
 ```
 
-> connect 详细操作流程
+## connect 连接流程
 
 ```java
 private synchronized void connect()
@@ -145,7 +149,7 @@ private void initialize(InetSocketAddress jobTrackAddr, Configuration conf)
 }
 ```
 
-> connect 连接成功，提交任务详细信息
+## 实际提交流程
 
 ```java
 JobStatus submitJobInternal(Job job, Cluster cluster) 
@@ -204,3 +208,121 @@ throws ClassNotFoundException, InterruptedException, IOException {
 ![Hadoop 任务临时路径](/images/hadoop/map-reduce/job-staging.png)
 ![hadoop 临时切片文件](/images/hadoop/map-reduce/split-file.png)
 ![hadoop Job 提交流程](/images/hadoop/map-reduce/job-submit.png)
+
+## 切片流程
+
+```java
+private int writeSplits(org.apache.hadoop.mapreduce.JobContext job,
+    Path jobSubmitDir) throws IOException, InterruptedException, ClassNotFoundException {
+    JobConf jConf = (JobConf)job.getConfiguration();
+    int maps;
+    if (jConf.getUseNewMapper()) {
+        // 使用新的切片规则
+        maps = writeNewSplits(job, jobSubmitDir);
+    } else {
+        // 使用旧切片规则
+        maps = writeOldSplits(jConf, jobSubmitDir);
+    }
+    return maps;
+}
+```
+
+```java
+private <T extends InputSplit> int writeNewSplits(JobContext job, Path jobSubmitDir) throws IOException,
+        InterruptedException, ClassNotFoundException {
+    // 获取配置信息
+    Configuration conf = job.getConfiguration();
+    InputFormat<?, ?> input =
+        ReflectionUtils.newInstance(job.getInputFormatClass(), conf);
+
+    // 获取切片信息
+    List<InputSplit> splits = input.getSplits(job);
+    T[] array = (T[]) splits.toArray(new InputSplit[splits.size()]);
+
+    Arrays.sort(array, new SplitComparator());
+    JobSplitWriter.createSplitFiles(jobSubmitDir, conf, 
+        jobSubmitDir.getFileSystem(conf), array);
+    return array.length;
+}
+```
+
+```java
+// 此处调用的是 FileInputFormat 中的 getSplits
+public List<InputSplit> getSplits(JobContext job) throws IOException {
+    StopWatch sw = new StopWatch().start();
+    long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
+    long maxSize = getMaxSplitSize(job);
+
+    List<InputSplit> splits = new ArrayList<InputSplit>();
+    // 文件信息
+    List<FileStatus> files = listStatus(job);
+    // 按照文件，一个一个切片
+    for (FileStatus file: files) {
+        Path path = file.getPath();
+        long length = file.getLen();
+        if (length != 0) {
+        BlockLocation[] blkLocations;
+        if (file instanceof LocatedFileStatus) {
+            blkLocations = ((LocatedFileStatus) file).getBlockLocations();
+        } else {
+            FileSystem fs = path.getFileSystem(job.getConfiguration());
+            blkLocations = fs.getFileBlockLocations(file, 0, length);
+        }
+        // 判断是否可切割
+        if (isSplitable(job, path)) {
+            // 获取块大小（如果是 local 运行：2.x 32 M，1.x 64 M，yarn 集群：128M，）
+            long blockSize = file.getBlockSize();
+            // 获取切片大小
+            long splitSize = computeSplitSize(blockSize, minSize, maxSize);
+
+            long bytesRemaining = length;
+            // 如果当前文件大小 / 切片大小 > 1.1，进入此方法进行切片
+            while (((double) bytesRemaining)/splitSize > SPLIT_SLOP) {
+                // 重新计算切片开始位置
+                int blkIndex = getBlockIndex(blkLocations, length-bytesRemaining);
+                // 添加切片
+                splits.add(makeSplit(path, length-bytesRemaining, splitSize,
+                            blkLocations[blkIndex].getHosts(),
+                            blkLocations[blkIndex].getCachedHosts()));
+                bytesRemaining -= splitSize;
+            }
+
+            if (bytesRemaining != 0) {
+                int blkIndex = getBlockIndex(blkLocations, length-bytesRemaining);
+                // 添加切片
+                splits.add(makeSplit(path, length-bytesRemaining, bytesRemaining,
+                            blkLocations[blkIndex].getHosts(),
+                            blkLocations[blkIndex].getCachedHosts()));
+            }
+        } else { // not splitable
+            splits.add(makeSplit(path, 0, length, blkLocations[0].getHosts(),
+                        blkLocations[0].getCachedHosts()));
+        }
+        } else { 
+            //Create empty hosts array for zero length files
+            splits.add(makeSplit(path, 0, length, new String[0]));
+        }
+    }
+    // Save the number of input files for metrics/loadgen
+    job.getConfiguration().setLong(NUM_INPUT_FILES, files.size());
+    sw.stop();
+    if (LOG.isDebugEnabled()) {
+        LOG.debug("Total # of splits generated by getSplits: " + splits.size()
+            + ", TimeTaken: " + sw.now(TimeUnit.MILLISECONDS));
+    }
+    return splits;
+}
+```
+
+## 总结
+
+1. 先创建一个数据存储的临时目录
+2. 开始规划切片，遍历处理目录下的每个文件
+3. 遍历文件：
+> 获取文件大小
+> 计算切片大小，公式： Math.max(minSize, Math.min(maxSize, blockSize))
+> 默认情况下，切片大小 = blockSize
+> 开始切片：local 运行（第一个切片 0~32M，第二个切片 32~64M ...）；Yarn 运行（第一个切片 0~128M，第二个切片 128~256M ...）；注意：每次切片时，都需要判断切片完成后剩余部分是否是块大小的 1.1 倍，大于就切片，否则不切
+> 将切片信息写入切片规划文件
+> InputSplit 只记录切片的元数据信息（起始位置、长度、所在节点列表等）
+4. 提交切片规划文件（local 运行时为临时目录，集群运行时为 yarn）；Yarn 上的 MrAppMaster 根据切片规划文件计算开启 MapTask 个数。
