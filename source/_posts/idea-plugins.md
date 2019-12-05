@@ -25,7 +25,6 @@ tags:
 # material theme ui
 
 修改 idea 默认 UI
-![theme ui](/images/theme-ui.png)
 
 # Grep Console
 
