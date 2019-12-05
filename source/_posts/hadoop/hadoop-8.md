@@ -1,5 +1,6 @@
 ---
 title: Hadoop（8） <br/> DataNode、小文件存档
+date: 2019-12-02 09:56:18
 updated: 2019-12-02 09:56:18
 categories:
     [hadoop, hdfs]
