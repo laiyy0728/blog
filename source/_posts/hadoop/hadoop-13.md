@@ -40,4 +40,22 @@ tags:
 
 # Shuffle
 
-Map 方法之后，Reduce 方法之前的数据处理，称之为 Shuffle。
+Map 方法之后，Reduce 方法之前的数据处理，称之为 Shuffle。此操作涉及：分区、排序、归并排序、数据压缩等。
+
+![shuffle](/images/hadoop/shuffle/shuffle.png)
+
+
+## Partition 分区
+
+分区：将统计的结果，按照不同的条件，输出到不同的文件中。默认分区实现：`HashPartitioner`。
+
+```java
+public class HashPartitioner<K, V> extends Partitioner<K, V> {
+
+    public int getPartition(K key, V value, int numReduceTasks) {
+        return (key.hashCode() & Integer.MAX_VALUE) % numReduceTasks;
+    }
+
+}
+```
+由源码可知，默认的分区是根据 key 的HashCode 对 ReduceTasks 个数取模得到的。用户没有办法控制哪个 key 存储到哪个分区。
