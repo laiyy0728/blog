@@ -59,3 +59,80 @@ public class HashPartitioner<K, V> extends Partitioner<K, V> {
 }
 ```
 由源码可知，默认的分区是根据 key 的HashCode 对 ReduceTasks 个数取模得到的。用户没有办法控制哪个 key 存储到哪个分区。
+
+修改 WordCount 实例，增加配置： `job.setNumReduceTasks(2);`，再次运行。当 Mapper 进入 `context.write(key, value);` 时，将进行分区操作。
+
+```java
+// MapTask.java
+public void write(K key, V value) throws IOException, InterruptedException {
+    // collector 收集器；此处调用的是 MapOutputBuffer 的 collect 方法
+    collector.collect(key, value,
+                    // 此处调用的 Partitioner 即为 HashPartitioner
+                    partitioner.getPartition(key, value, partitions));
+}
+```
+
+运行后查看输出目录，发现有 2 个文件，证明分区成功。
+![2 split](/images/hadoop/shuffle/2-split.png)
+![2 split](/images/hadoop/shuffle/2-split-result.png)
+
+## 自定义分区
+
+实现步骤：
+
+1. 自定义类，继承 `Partitioner`，重写 `getPartition` 方法
+2. 在 Job 驱动中，设置自定义的 Partitioner
+3. 根据自定义的 Partitioner 逻辑，设置相应数量的 ReduceTask
+
+需求：使用之前 [序列化实例](/hadoop/map-reduce/hadoop-10.html#序列化-Demo) 的输入数据，实现 `按照手机号归属地不同，输出的不同的文件中`。
+
+期望输出：如果手机号以 `偶数` 结尾，输入的一个文件，否则输出到不同文件。 根据文件内容，手机号以 `0、3、5、7、8` 结尾，则 0、8 输出到一个文件，其余的每个手机号一个文件。
+
+---
+***注意：在使用自定义的 Partitioner 时，必须要指定 ReduceTask 的数量（setNumReduceTasks），否则只会输出一个文件，且所有数据都在这一个文件中！***
+***如果指定的 ReduceTask 数量，小于 Partitioner 中的数量，则会出现 IO 异常，原因：无法确定输出结果用哪个 ReduceTask 输出。***
+***如果指定的 ReduceTask 数量，大于 Partitioner 中的数量，不会报错，但是会出现几个空文件***
+***分区号必须从0开始，逐一累加***
+
+---
+
+> 在之前`序列化实例`的基础上，进行修改
+
+1. 自定义 Partitioner
+
+```java
+public class FlowBanPartitioner extends Partitioner<Text, FlowBean> {
+    // 注意：getPartition 只能从 0 开始。
+    @Override
+    public int getPartition(Text text, FlowBean flowBean, int numPartitions) {
+        // 如果手机号以 `偶数` 结尾，输入的一个文件，否则输出到不同文件
+        String phone = text.toString();
+        String key = phone.substring(9, 12);
+        if (key.equals("885")){
+            return 0;
+        } else if (key.equals("889")){
+            return 1;
+        } else if (key.equals("883")){
+            return 2;
+        } else if (key.equals("887")){
+            return 3;
+        } else {
+            return 4;
+        }
+    }
+}
+```
+
+2. 修改 Driver
+
+```java
+// 修改 Partitioner
+job.setPartitionerClass(FlowBeanPartitioner.class);
+// 根据 Partitioner，设置 ReduceTask
+job.setNumReduceTasks(5);
+```
+
+1. 测试运行
+
+![自定义分区](/images/hadoop/shuffle/customer-split.png)
+![自定义分区](/images/hadoop/shuffle/customer-split-result.png)
