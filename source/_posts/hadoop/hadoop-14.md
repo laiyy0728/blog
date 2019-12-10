@@ -230,3 +230,99 @@ Map-Reduce Framework
 > 方案 2
 
 直接将之前的 Reducer 作为 Combiner 即可。`job.setCombinerClass(WordCountReducer.class);`
+
+---
+
+# 辅助排序
+
+GroupingComparator，对 Reducer 阶段的数据根据某一个或几个字段进行分组。
+
+分组排序步骤：
+> 自定义排序类，继承 WritableComparator
+> 从学 compare 方法
+> 创建一个构造，将比较对象传给父类
+
+## Demo
+
+根据订单 [输入数据](/file/hadoop/grouping/grouping.txt)，进行分组，并找出每笔订单中最贵的商品
+
+实现步骤：
+1. 利用 “订单 id、成交金额” 作为 key，可以将 Map 阶段读取到的订单数据按照 id 进行排序。如果 id 相同，再根据金额降序，然后发送到 Reducer
+2. 在 Reducer 利用 GroupingComparator 将订单相同的 KV 聚合成组，然后取第一个即可。
+
+> 创建一个 Bean，用于存储订单信息
+
+```java
+public class OrderBean implements WritableComparable<OrderBean> {
+
+    private int orderId;
+    private double price;
+
+    public int compareTo(OrderBean order) {
+        // 先按照 id 升序，id 相同的按照价格降序
+        if (orderId > order.getOrderId()){
+            return 1;
+        } else if (orderId < order.getOrderId()){
+            return -1;
+        } else {
+            return Double.compare(order.getPrice(), price);
+        }
+    }
+
+    public void write(DataOutput dataOutput) throws IOException {
+        dataOutput.writeInt(orderId);
+        dataOutput.writeDouble(price);
+    }
+
+    public void readFields(DataInput dataInput) throws IOException {
+        orderId = dataInput.readInt();
+        price = dataInput.readDouble();
+    }
+
+    // 省略
+}
+```
+
+> Mapper
+
+```java
+public class OrderMapper extends Mapper<LongWritable, Text, OrderBean, NullWritable> {
+
+    private OrderBean order = new OrderBean();
+
+    @Override
+    protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+        String[] fields = value.toString().split("\t");
+        int orderId = Integer.parseInt(fields[0]);
+        double price = Double.parseDouble(fields[2]);
+
+        order.setOrderId(orderId);
+        order.setPrice(price);
+
+        context.write(order, NullWritable.get());
+    }
+}
+```
+
+> Reducer
+
+```java
+public class OrderReducer extends Reducer<OrderBean, NullWritable, OrderBean, NullWritable> {
+
+    @Override
+    protected void reduce(OrderBean key, Iterable<NullWritable> values, Context context) throws IOException, InterruptedException {
+        context.write(key, NullWritable.get());
+    }
+}
+```
+
+> Driver 省略
+
+> 结果
+
+![grouping1](/images/hadoop/shuffle/grouping.png)
+
+## 开始分组排序
+
+在得到了结果后，可以看到，现在的结果确实是不同订单的，在一起显示，且是按照倒序排列的。只不过，没有进行分组，没有完成只输出第一条。在此基础上，开始进行辅助分组排序。
+
