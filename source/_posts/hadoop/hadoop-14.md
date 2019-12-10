@@ -1,11 +1,11 @@
 ---
-title: hadoop（14） Map Reduce <BR /> 排序
+title: hadoop（14） Map Reduce <BR /> 排序、合并
 date: 2019-12-09 16:02:42
 updated: 2019-12-09 16:02:42
 categories:
-    [hadoop, map-reduce, shuffle]
+    [hadoop, map-reduce, sort]
 tags:
-    [hadoop, map-reduce, shuffle]
+    [hadoop, map-reduce, sort]
 ---
 
 排序，是 MapReduce 中最重要的操作之一。默认的排序方式是 `字典排序`，且实现此排序的方式是 `快速排序`。
@@ -113,3 +113,120 @@ protected void reduce(FlowBean key, Iterable<Text> values, Context context) thro
 
 需求：使用 [输入数据](/file/hadoop/shuffle/sort_1.txt)，期望输出：根据手机号的前三位不同，分成不同的文件，并在每个文件中，按照总流量倒序输出。
 
+在上一例全排序的基础上，增加一个分区操作。
+
+```java
+public class FlowBeanPartitioner extends Partitioner<FlowBean, Text> {
+    @Override
+    public int getPartition(FlowBean flowBean, Text text, int numPartitions) {
+        int partitioner = 4;
+        String phonePrefix = text.toString().substring(0, 3);
+        if ("134".equals(phonePrefix)){
+            partitioner = 0;
+        } else if ("135".equals(phonePrefix)){
+            partitioner = 1;
+        } else if ("136".equals(phonePrefix)){
+            partitioner = 2;
+        }else if ("137".equals(phonePrefix)){
+            partitioner = 3;
+        }
+        return partitioner;
+    }
+}
+```
+
+> 查看结果
+
+![分区排序](/images/hadoop/shuffle/shuffle-sort.png)
+
+---
+
+# 合并
+
+> Combiner 是 MapReduce 程序中 Maper 和 Reducer 之外的一种组件
+> Combiner 是父类是 Reducer
+> Combiner 与 Reducer 的区别在于运行的位置：Combiner 是在每个 MapTask 所在的节点运行；Reducer 是接收全局所有 Mapper 的输出结果
+> Combiner 的意义是对每个 MapTask 的数据进行局部汇总，以减小网络的传输量
+> 应用前提：不能影响最终的业务逻辑（Combiner 输出的 KV，应该与 Reducer 的输入 KV 类型对应）
+
+## 自定义 Combiner
+
+需求： 使用 [输入数据](/file/hadoop/combiner/combiner.txt)，进行 `局部汇总`，以减小网络传输量。
+
+期望输出：分隔单词，局部汇总每个单词的数量
+
+***以 WordCount 实例为例***
+
+原始的 WordCount 的控制台输出为：
+```
+Map-Reduce Framework
+    Map input records=8
+    Map output records=18
+    Map output bytes=168
+    Map output materialized bytes=210
+    Input split bytes=100
+    Combine input records=0
+    Combine output records=0
+    Reduce input groups=7
+    Reduce shuffle bytes=210
+    Reduce input records=18
+    Reduce output records=7
+    Spilled Records=36
+    Shuffled Maps =1
+    Failed Shuffles=0
+    Merged Map outputs=1
+    GC time elapsed (ms)=7
+    Total committed heap usage (bytes)=514850816
+```
+
+> 方案 1
+
+自实现一个 Combiner，并在 Driver 中注册。
+
+```java
+public class WordCountCombiner extends Reducer<Text, IntWritable, Text, IntWritable> {
+
+    private IntWritable outValue = new IntWritable();
+    
+    @Override
+    protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+        int sum = 0;
+        // 1. 累加求和
+        for (IntWritable value : values) {
+            sum += value.get();
+        }
+        outValue.set(sum);
+        context.write(key, outValue);
+    }
+}
+```
+
+```java
+job.setCombinerClass(WordCountCombiner.class);
+```
+
+测试运行：
+```
+Map-Reduce Framework
+    Map input records=8
+    Map output records=18
+    Map output bytes=168
+    Map output materialized bytes=85  //缩小了
+    Input split bytes=100
+    Combine input records=18    // 相比之前 Combine 有变化
+    Combine output records=7
+    Reduce input groups=7
+    Reduce shuffle bytes=85      // 缩小了
+    Reduce input records=7      // 缩小了
+    Reduce output records=7
+    Spilled Records=14          // 缩小了
+    Shuffled Maps =1
+    Failed Shuffles=0
+    Merged Map outputs=1
+    GC time elapsed (ms)=11      // 缩小了
+    Total committed heap usage (bytes)=514850816
+```
+
+> 方案 2
+
+直接将之前的 Reducer 作为 Combiner 即可。`job.setCombinerClass(WordCountReducer.class);`
