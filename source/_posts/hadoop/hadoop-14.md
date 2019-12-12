@@ -326,3 +326,62 @@ public class OrderReducer extends Reducer<OrderBean, NullWritable, OrderBean, Nu
 
 在得到了结果后，可以看到，现在的结果确实是不同订单的，在一起显示，且是按照倒序排列的。只不过，没有进行分组，没有完成只输出第一条。在此基础上，开始进行辅助分组排序。
 
+```java
+public class OrderGroupingComparator extends WritableComparator {
+
+    // 创建一个构造，调用父方法的构造，第二个参数必须传为 true
+    public OrderGroupingComparator() {
+        super(OrderBean.class, true);
+    }
+
+    /**
+     * 注意，一定要重写两个参数均为 WritableComparable 的比较方法
+     */
+    @Override
+    public int compare(WritableComparable a, WritableComparable b) {
+        OrderBean order1 = ((OrderBean) a);
+        OrderBean order2 = ((OrderBean) b);
+        int result;
+        if (order1.getOrderId() > order2.getOrderId()){
+            result = 1;
+        } else if (order1.getOrderId() < order2.getOrderId()){
+            result = -1;
+        } else {
+            result = 0;
+        }
+        return result;
+    }
+}
+
+
+// WritableComparator 源码
+protected WritableComparator(Class<? extends WritableComparable> keyClass, boolean createInstances) {
+    this(keyClass, (Configuration)null, createInstances);
+}
+
+protected WritableComparator(Class<? extends WritableComparable> keyClass, Configuration conf, boolean createInstances) {
+    this.keyClass = keyClass;
+    this.conf = conf != null ? conf : new Configuration();
+    // 由此可见，如果 OrderGroupingComparator 的构造参数，在调用父类的构造时，
+    // 如果传入的是 false，或者不传入第二个参数，则 key1、buffer 均为 null，此时可能出现空指针异常。
+    if (createInstances) {
+        this.key1 = this.newKey();
+        this.key2 = this.newKey();
+        this.buffer = new DataInputBuffer();
+    } else {
+        this.key1 = this.key2 = null;
+        this.buffer = null;
+    }
+
+}
+```
+
+> Driver
+
+```java
+job.setGroupingComparatorClass(OrderGroupingComparator.class);
+```
+
+> 运行测试
+
+![grouping result](/images/hadoop/shuffle/grouping-result.png)
