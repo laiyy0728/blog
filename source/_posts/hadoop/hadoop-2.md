@@ -12,6 +12,13 @@ tags: [hadoop]
 
 <!-- more -->
 
+# 常用端口号
+
+> HDFS NameNode（web UI）： dfs.namenode.http-address（50070）
+> SecondaryNameNode 辅助节点：50090
+> HDFS 数据节点：dfs.datanode.address（50010）
+> fs.defaultFS:8020/9000
+> YARN ResourceManager web UI： yarn.resourcemanager.webapp.address（8088）
 
 # 修改配置文件
 

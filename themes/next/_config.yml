@@ -709,7 +709,7 @@ pace_theme: pace-theme-barber-shop
 canvas_nest: false
 
 # three_waves
-three_waves: true
+three_waves: false
 
 # canvas_lines
 canvas_lines: false
