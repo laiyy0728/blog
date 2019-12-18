@@ -291,3 +291,32 @@ Buffer 和 Reduce 是没有直接关联的，中间有多次 `写磁盘 -> 读�
 
 ## 小文件优化
 
+> 小文件弊端
+
+HDFS 上每个文件都要在 NameNode 上建立一个索引，索引大小约 150 byte，当小文件较多时会产生很多索引文件，一方面会大量占用 NameNode 的内存空间，另一方面就是索引文件过大，使得索引速度变慢。
+
+> 优化方式
+
+1. 在数据采集时，将小文件或小批数据合并为大文件再上传 HDFS
+2. 在业务处理前，在 HDFS 上使用 MapReduce 程序，对小文件进行合并
+3. 在 MapReduce 处理时，使用 CombineTextInputFormat 提高效率
+
+### 解决方案
+
+> Hadoop  Archive
+
+归档是一个高效的将小文件放入 HDFS 块中的文件存档工具，能工将多个小文件打包为一个 HAR 文件，减少 NameNode 内存使用
+
+> Sequence File
+
+由一系列二进制 KV 组成，如果 key 为文件名，value 为文件内存，则可以将大批小文件合并成一个大文件
+
+> CombineFileInputFormat
+
+新的 InputFormat，用于将多个文件合并为一个单独的 Split，且它会考虑数据的存储位置
+
+> 开启 JVM 重用
+
+对于大量小文件的任务，可以开启 JVM 重用，会减少大约一半的运行时间。
+JVM 重用原理：一个 Map 运行在一个 JVM 中，开启后，该 Map 在 JVM 上运行完毕后，JVM 会继续运行其他的 Map。
+可以通过修改 ***mapred-site.xml*** 中的 `mapreduce.job.jvm.numtasks` 参数，默认为 1，即运行一个 Task 就销毁 JVM
