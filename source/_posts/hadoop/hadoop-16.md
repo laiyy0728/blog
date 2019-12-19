@@ -3,9 +3,9 @@ title: hadoop（16） Map Reduce <BR /> ReduceJoin、MapJoin
 date: 2019-12-13 09:43:17
 updated: 2019-12-13 09:43:17
 categories:
-    [hadoop, map-reduce, reduce-join]
+    [hadoop, map-reduce, map-join]
 tags:
-    [hadoop, map-reduce, reduce-join]
+    [hadoop, map-reduce, map-join]
 ---
 
 ReduceJoin 的工作：
