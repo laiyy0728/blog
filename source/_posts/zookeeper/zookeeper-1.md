@@ -1,5 +1,5 @@
 ---
-title: zookeeper-1
+title: Zookeeper（一） <BR/> 安装、命令行操作
 date: 2019-12-19 13:55:16
 updated: 2019-12-19 13:55:16
 categories:
@@ -260,44 +260,306 @@ Mode: follower
 
 # 客户端命令行操作
 
-| 命令基本语法 | 描述 |
-| :-: | :-: |
-| help | 显示所有操作命令 |
-| ls [path] | 
+## help
+
+可以显示所有操作命令
+
+```
+[zk: localhost:2181(CONNECTED) 3] help
+ZooKeeper -server host:port cmd args
+	stat path [watch]
+	set path data [version]
+	ls path [watch]
+	delquota [-n|-b] path
+	ls2 path [watch]
+	setAcl path acl
+	setquota -n|-b val path
+	history 
+	redo cmdno
+	printwatches on|off
+	delete path [version]
+	sync path
+	listquota path
+	rmr path
+	get path [watch]
+	create [-s] [-e] path data acl
+	addauth scheme auth
+	quit 
+	getAcl path
+	close 
+	connect host:port
+```
+
+## ls path [watch]
+
+查看当前 ZNode 中所包含的内容；除根节点外，都不能以 / 结尾
+
+```
+[zk: localhost:2181(CONNECTED) 1] ls /
+[zookeeper]
+```
+
+> 节点监听
+
+在 hadoop03、hadoop04 上，监听 `/laiyy` 节点的变化。
+
+```
+[zk: localhost:2181(CONNECTED) 0] ls /laiyy watch
+[gender0000000002, name, gender0000000001, gender0000000004, gender0000000003]
+```
+
+在 hadoop02 上修改/创建一个 `/laiyy` 节点或子节点，查看 hadoop03、hadoop04 的变化
+
+```
+[zk: localhost:2181(CONNECTED) 16] create /laiyy/email 'laiyy0728@gmail.com'
+Created /laiyy/email
+```
+
+```
+[zk: localhost:2181(CONNECTED) 1] 
+WATCHER::
+
+WatchedEvent state:SyncConnected type:NodeChildrenChanged path:/laiyy
+
+```
+
+***注意：监听方式只有一次有效，即监听到一次变化后，后续的就不再监听了***
+
+## ls2 path [watch]
+
+获取 ZNode 总所包含的内容，包括更新时间、次数等；除根节点外，都不能以 / 结尾
+
+```
+[zk: localhost:2181(CONNECTED) 2] ls2 /
+[zookeeper]
+cZxid = 0x0
+ctime = Thu Jan 01 08:00:00 CST 1970
+mZxid = 0x0
+mtime = Thu Jan 01 08:00:00 CST 1970
+pZxid = 0x0
+cversion = -1
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 0
+numChildren = 1
+```
+
+## create
+
+普通创建。  -s 含有序列， -e 临时（重启或超时即消失）
+
+***注意***： 创建节点的同时，需要写入数据，否则创建不成功
+
+```
+[zk: localhost:2181(CONNECTED) 4] create /laiyy "test_create"
+Created /laiyy
+[zk: localhost:2181(CONNECTED) 5] ls /
+[laiyy, zookeeper]
+```
+
+> 短暂节点
+
+```
+[zk: localhost:2181(CONNECTED) 0] create -e /laiyy/name "laiyy"
+Created /laiyy/name
+[zk: localhost:2181(CONNECTED) 1] ls /laiyy
+[name]
+```
+
+创建成功后，退出客户端重新连接查看 `/laiyy` 节点
+
+```
+[zk: localhost:2181(CONNECTED) 2] quit
+Quitting...
+2019-12-20 10:24:15,052 [myid:] - INFO  [main:ZooKeeper@684] - Session: 0x26f2112be2b0001 closed
+2019-12-20 10:24:15,054 [myid:] - INFO  [main-EventThread:ClientCnxn$EventThread@519] - EventThread shut down for session: 0x26f2112be2b0001
 
 
-# Zookeeper 内部原理
+[root@hadoop02 zookeeper-3.4.10]# bin/zkCli.sh 
+Connecting to localhost:2181
 
-## 选举机制
+[zk: localhost:2181(CONNECTED) 0] ls /laiyy
+[]
+```
 
-> 半数机制：集群中半数以上的机器存活，集群可用。所以 Zookeeper 适合安装 ***奇数台服务器***
+> 带序号的节点（持久型）
 
-> Zookeeper 虽然在配置文件中没有指定 Master 和 Slave，但是 Zookeeper 工作室，是有一个节点为 Leader，其他为 Follower；Leader 是通过 `内部选举机制临时产生`
+```
+[zk: localhost:2181(CONNECTED) 1] create -s /laiyy/gender 'man'
+Created /laiyy/gender0000000001
 
-### 选举过程
+[zk: localhost:2181(CONNECTED) 4] ls /laiyy
+[gender0000000001]
 
-假设有舞台服务器组成 Zookeeper 集群，它们的 id 为 `1~5`，同时，它们都是最新启动的，没有历史数据，所有配置一样。假设服务器依次启动，其选举过程为：
+[zk: localhost:2181(CONNECTED) 1] create -s /laiyy/gender 'man'
+Created /laiyy/gender0000000002
+[zk: localhost:2181(CONNECTED) 1] create -s /laiyy/gender 'man'
+Created /laiyy/gender0000000003
+[zk: localhost:2181(CONNECTED) 1] create -s /laiyy/gender 'man'
+Created /laiyy/gender0000000004
 
-1. 服务器 A 启动，此时只有一台服务器启动，它发出的报文没有任何响应，选举状态为 `LOOKING`
-2. 服务器 B 启动，与 A 通信，互相交换自己的选举结果。由于两者都没有历史数据，所以 id 较大的 B 胜出；但是，由于没有超过半数以上的服务器同意（5台服务器，半数以上是3)，所以 A、B 继续保持 `LOOKING`
-3. 服务器 C 启动，与 A、B 通信，根据前面的分析，此时 C 是集群中的 Leader。
-4. 服务器 D 启动，与 A、B、C 通信，理论上来说应该是 D 为 Leader，但是 C 已经成为了 Leader， 所以 D 只能成为 Follower
-5. 服务器 E 启动，同样与 D 一样，只能当 Follower
+[zk: localhost:2181(CONNECTED) 8] ls /laiyy
+[gender0000000002, gender0000000001, gender0000000004, gender0000000003]
+```
+
+## get path [watch]
+
+获取节点的值
+
+```
+[zk: localhost:2181(CONNECTED) 6] get /laiyy
+test_create
+cZxid = 0x200000002
+ctime = Fri Dec 20 10:19:03 CST 2019
+mZxid = 0x200000002
+mtime = Fri Dec 20 10:19:03 CST 2019
+pZxid = 0x200000002
+cversion = 0
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 11
+numChildren = 0
+```
+
+> 监听值的变化
+
+在 hadoop03、hadoop04 上，监听 `/laiyy` 节点的变化。
+
+```
+[zk: localhost:2181(CONNECTED) 1] get /laiyy watch
+test_create
+cZxid = 0x200000002
+ctime = Fri Dec 20 10:19:03 CST 2019
+mZxid = 0x200000002
+mtime = Fri Dec 20 10:19:03 CST 2019
+pZxid = 0x20000000d
+cversion = 7
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 11
+numChildren = 5
+```
 
 
-## 节点类型
+在 hadoop02 上，修改 `/laiyy` 节点的值，查看 hadoop03、hadoop04 上的输出
+```
+[zk: localhost:2181(CONNECTED) 15] set /laiyy 'emmmm'
+cZxid = 0x200000002
+ctime = Fri Dec 20 10:19:03 CST 2019
+mZxid = 0x200000011
+mtime = Fri Dec 20 10:36:33 CST 2019
+pZxid = 0x20000000d
+cversion = 7
+dataVersion = 1
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 5
+numChildren = 5
+```
 
-> 持久型
+```
+[zk: localhost:2181(CONNECTED) 1] 
+WATCHER::
 
-客户端和服务器端断开链接后，创建的节点不删除；
-Zookeeper 给该节点名称进行顺序编号
+WatchedEvent state:SyncConnected type:NodeDataChanged path:/laiyy
+```
 
-创建 ZNode 时，设置顺序标识，ZNode 名称后会附加一个值，顺序号是一个单调递增的计数器，由父节点维护
 
-***注意***：在分布式系统中，顺序号可以被用于为所有的事件进行全局排序，这样客户端可以通过顺序号推断事件的顺序
+***注意：监听方式只有一次有效，即监听到一次变化后，后续的就不再监听了***
 
-> 短暂型
- 
-客户端与服务器端断开链接后，创建的节点自己删除；
-Zookeeper 给该节点名称进行顺序编码
+## set 
 
+设置节点的具体值
+
+创建 `/laiyy/name` 节点，赋值为 `laiyy`，使用 set 节点重新赋值
+
+```
+[zk: localhost:2181(CONNECTED) 12] get /laiyy/name
+laiyy
+cZxid = 0x20000000d
+ctime = Fri Dec 20 10:31:18 CST 2019
+mZxid = 0x20000000d
+mtime = Fri Dec 20 10:31:18 CST 2019
+pZxid = 0x20000000d
+cversion = 0
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 5
+numChildren = 0
+```
+
+```
+[zk: localhost:2181(CONNECTED) 13] set /laiyy/name 'hahaha'
+cZxid = 0x20000000d
+ctime = Fri Dec 20 10:31:18 CST 2019
+mZxid = 0x20000000e
+mtime = Fri Dec 20 10:32:50 CST 2019
+pZxid = 0x20000000d
+cversion = 0
+dataVersion = 1
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 6
+numChildren = 0
+
+[zk: localhost:2181(CONNECTED) 14] get /laiyy/name         
+hahaha
+cZxid = 0x20000000d
+ctime = Fri Dec 20 10:31:18 CST 2019
+mZxid = 0x20000000e
+mtime = Fri Dec 20 10:32:50 CST 2019
+pZxid = 0x20000000d
+cversion = 0
+dataVersion = 1
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 6
+numChildren = 0
+```
+
+## stat
+
+查看节点状态
+
+```
+[zk: localhost:2181(CONNECTED) 0] stat /laiyy
+cZxid = 0x200000002
+ctime = Fri Dec 20 10:19:03 CST 2019
+mZxid = 0x200000011
+mtime = Fri Dec 20 10:36:33 CST 2019
+pZxid = 0x200000018
+cversion = 9
+dataVersion = 1
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 5
+numChildren = 7
+```
+
+## delete 
+
+删除节点
+
+```
+[zk: localhost:2181(CONNECTED) 1] ls /laiyy
+[address, gender0000000002, name, gender0000000001, gender0000000004, email, gender0000000003]
+[zk: localhost:2181(CONNECTED) 2] delete /laiyy/address
+[zk: localhost:2181(CONNECTED) 3] ls /laiyy
+[gender0000000002, name, gender0000000001, gender0000000004, email, gender0000000003]
+[zk: localhost:2181(CONNECTED) 4] delete /laiyy
+Node not empty: /laiyy
+```
+
+## rmr
+
+递归删除节点
+
+```
+[zk: localhost:2181(CONNECTED) 5] rmr /laiyy
+[zk: localhost:2181(CONNECTED) 6] ls /  
+[zookeeper]
+```
