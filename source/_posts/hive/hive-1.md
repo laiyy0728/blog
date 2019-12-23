@@ -1,5 +1,5 @@
 ---
-title: Hive(一) <BR/> 基础概念
+title: Hive(一) <BR/> 基础概念、安装、基础命令
 date: 2019-12-20 14:51:14
 updated: 2019-12-20 14:51:14
 categories:
@@ -56,7 +56,6 @@ Hive 调优困难，粒度较粗
 ## 架构
 
 ![Hive 架构](/images/hive/hive.png)
-
 
 ## 与数据库的比较
 
@@ -202,12 +201,12 @@ Time taken: 26.301 seconds
 
 > 插入完成后，查看 HDFS Web UI
 
-![Hive 创建表、插入数据](/images/hive/create_table.png)
+![Hive 创建表、插入数据](/images/hive/install/installcreate_table.png)
 
 
 > 再次插入一条数据，查看 WebUI
 
-![插入第二条数据](/images/hive/inser-data.png)
+![插入第二条数据](/images/hive/install/inser-data.png)
 
 ***注意：这个 copy1 并不是真的拷贝的之前 `000000_0` 的数据！***
 
