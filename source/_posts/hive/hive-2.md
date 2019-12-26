@@ -175,9 +175,99 @@ java.sql.SQLException: Failed to start database 'metastore_db' with class loader
 
 Hive 默认数据库是 `derby`，是单用户的，当有两个连接以上时就会报错。为了防止这个错误，可以把元数据信息从 derby 中改为存储在 mysql 中。
 
-## 安装 MySQL 
+## 使用 MySQL 存储元数据
 
-使用 rpm 包安装 mysql，本例版本为 `5.6.24`，如已经安装了 MySQL，可跳过此步骤
+***注意：本例假设 MySQL 已经成功安装，且 MySQL 已经配置了 root+密码，所有主机访问***
+
+本例采用MySQL 57 版本，插件包为 [6.0.6 版本](/file/hive/mysql-connector-java-6.0.6.jar)
+
+将插件包拷贝到 `%HIVE_HOME%/lib/` 下。
+
+```
+[root@hadoop02 mysql-connector-java-5.1.27]# cp mysql-connector-java-5.1.27-bin.jar /opt/module/hive/lib/
+```
+
+> 修改 Hive 配置信息
+
+在 `/opt/module/hive/conf/` 下创建一个 `hive-site.xml` 文件，根据 [官方文档](https://cwiki.apache.org/confluence/display/Hive/AdminManual+Metastore+3.0+Administration#AdminManualMetastore3.0Administration-Option2:ExternalRDBMS)，在 `hive-site.xml` 中添加数据库配置
+
+***注意：数据库要先创建好，表会在启动时自动创建；文件名称必须为 hive-site.xml，否则无效***
+
+```xml
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>jdbc:mysql://hadoop02:3306/hive_meta</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionDriverName</name>
+        <value>com.mysql.jdbc.Driver</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionUserName</name>
+        <value>root</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionPassword</name>
+        <value>123456</value>
+    </property>
+</configuration>
+```
+
+> 启动 hive
+
+由于版本问题导致的 SSL 日志忽略即可。
+
+```
+[root@hadoop02 hive]# bin/hive
+
+Logging initialized using configuration in jar:file:/opt/module/hive/lib/hive-common-1.2.1.jar!/hive-log4j.properties
+Thu Dec 26 15:18:55 CST 2019 WARN: Establishing SSL connection without server's identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn't set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to 'false'. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.
+Thu Dec 26 15:18:55 CST 2019 WARN: Establishing SSL connection without server's identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn't set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to 'false'. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.
+Thu Dec 26 15:18:55 CST 2019 WARN: Establishing SSL connection without server's identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn't set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to 'false'. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.
+Thu Dec 26 15:18:55 CST 2019 WARN: Establishing SSL connection without server's identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn't set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to 'false'. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.
+Thu Dec 26 15:18:56 CST 2019 WARN: Establishing SSL connection without server's identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn't set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to 'false'. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.
+Thu Dec 26 15:18:56 CST 2019 WARN: Establishing SSL connection without server's identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn't set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to 'false'. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.
+Thu Dec 26 15:18:56 CST 2019 WARN: Establishing SSL connection without server's identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn't set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to 'false'. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.
+Thu Dec 26 15:18:56 CST 2019 WARN: Establishing SSL connection without server's identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn't set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to 'false'. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.
+
+
+hive> 
+```
+
+![启动成功后](/images/hive/install/mysql.png)
+
+> 执行一些测试
+
+查询不到表，是因为 mysql 只是存储 `元数据`，而现在还没有在 mysql 做元数据存储的基础上创建 hive 表，所以查询不到。
+
+```
+hive> show tables;
+OK
+Time taken: 0.016 second
+```
+
+创建一个表，再查询
+
+```
+hive> create table test(id int);
+OK
+Time taken: 0.208 seconds
+hive> show tables;
+OK
+test
+Time taken: 0.018 seconds, Fetched: 1 row(s)
+```
+
+![MySQL metadata](/images/hive/install/mysql-metadata.png)
+![MySQl metadata](/images/hive/install/mysql-metadata-1.png)
+![MySQl metadata](/images/hive/install/mysql-metadata-2.png)
+
+
+<!-- ## 安装 MySQL  -->
+<!-- 使用 rpm 包安装 mysql，本例版本为 `5.6.24`，如已经安装了 MySQL，可跳过此步骤
 
 > 解压 mysql-libs，并安装 mysql rpm
 
@@ -255,4 +345,6 @@ mysql> flush privileges;
 
 > 重启mysql，使用 Navicat 连接测试
 
-![测试 MySQL](/images/hive/install/mysql-test.png)
+![测试 MySQL](/images/hive/install/mysql-test.png) -->
+
+
