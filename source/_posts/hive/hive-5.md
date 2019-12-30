@@ -3,9 +3,9 @@ title: Hive(五) <BR/> DDL
 date: 2019-12-30 11:33:02
 updated: 2019-12-30 11:33:02
 categories:
-    [hive]
+    [hive, ddl]
 tags:
-    [hive]
+    [hive, ddl]
 ---
 
 
