@@ -179,7 +179,7 @@ Hive 默认数据库是 `derby`，是单用户的，当有两个连接以上时�
 
 ***注意：本例假设 MySQL 已经成功安装，且 MySQL 已经配置了 root+密码，所有主机访问***
 
-本例采用MySQL 57 版本，插件包为 [6.0.6 版本](/file/hive/mysql-connector-java-6.0.6.jar)
+本例采用MySQL 57 版本，插件包为 [5.1.34 版本](/file/hive/mysql-connector-java-5.1.34.jar)
 
 将插件包拷贝到 `%HIVE_HOME%/lib/` 下。
 
