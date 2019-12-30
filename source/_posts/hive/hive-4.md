@@ -1,5 +1,5 @@
 ---
-title: Hive(四) <BR/> Hive 数据类型
+title: Hive(四) <BR/> Hive 数据类型、DDL
 date: 2019-12-30 09:45:25
 updated: 2019-12-30 09:45:25
 categories:
@@ -9,6 +9,7 @@ tags:
 ---
 
 Hive 中也有和 Java 类似的基本数据类型、复杂数据类型，也可以进行类型转换。
+在之前的操作中，使用的一直都是 default 数据库，如果要新建数据库该如何操作？
 
 <!-- more -->
 
@@ -194,3 +195,90 @@ Time taken: 0.072 seconds, Fetched: 1 row(s)
 ---
 
 # DDL 数据定义
+
+## 创建数据库
+
+注意一定要加上 `if not exists`，避免报错。
+
+```sql
+create database if not exists db_hive ;
+```
+![创建数据库](/images/hive/db/create_db.png)
+
+## 创建数据库，并指定 HDFS 的存储路径
+
+```sql
+create database if not exists db_hive2 location '/db_hive2.db';
+```
+
+![创建数据库并指定存储路径](/images/hive/db/create_db_2.png)
+
+## 查询数据库
+
+```
+hive (default)> show databases;
+OK
+database_name
+db_hive
+db_hive2
+default
+Time taken: 0.013 seconds, Fetched: 3 row(s)
+```
+
+> 模糊查询库
+```
+hive (default)> show databases like 'db_hive*';
+OK
+database_name
+db_hive
+db_hive2
+Time taken: 0.01 seconds, Fetched: 2 row(s)
+```
+
+## 查看数据库详情
+
+```
+hive (default)> desc database db_hive;
+OK
+db_name	comment	location	owner_name	owner_type	parameters
+db_hive		hdfs://hadoop02:9000/user/hive/warehouse/db_hive.db	root	USER	
+Time taken: 0.016 seconds, Fetched: 1 row(s
+```
+
+## 修改数据库
+
+可以使用 ALTER DATABASE 没了为某个数据库设置键值对属性(dbpeoperties)，来描述这个数据库的属性信息。
+***数据库的其他元数据信息都是不可更改的，包括数据吗名和数据库所在目录位置。***
+
+```
+hive (default)> alter database db_hive set dbproperties('createtime'='20191230');
+OK
+Time taken: 0.019 seconds
+```
+
+> extended 可以查看附加值
+```
+hive (default)> desc database extended db_hive;
+OK
+db_name	comment	location	owner_name	owner_type	parameters
+db_hive		hdfs://hadoop02:9000/user/hive/warehouse/db_hive.db	root	USER	{createtime=20191230}
+Time taken: 0.013 seconds, Fetched: 1 row(s
+```
+
+## 删除数据库
+
+```
+hive (default)> drop database is not exists db_hive;
+OK
+Time taken: 0.075 seconds
+```
+
+## 强制删除数据库
+
+如果数据库中有数据，可以使用 `CASCADE` 命令强制删除。
+
+```
+hive (default)> drop database is not exists db_hive2 cascade;
+OK
+Time taken: 0.033 seconds
+```
