@@ -1,5 +1,5 @@
 ---
-title: Hive(五) <BR/> DDL 2
+title: Hive(六) <BR/> DDL 2
 date: 2019-12-30 14:28:26
 updated: 2019-12-30 14:28:26
 categories:

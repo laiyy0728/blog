@@ -1,5 +1,5 @@
 ---
-title: Hive(五) <BR/> DDL 3 分区表、修改表
+title: Hive(七) <BR/> DDL 3 分区表、修改表
 date: 2019-12-30 17:33:55
 updated: 2019-12-30 17:33:55
 categories:
