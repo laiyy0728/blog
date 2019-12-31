@@ -263,3 +263,91 @@ Time taken: 0.088 seconds, Fetched: 4 row(s)
 ### load 数据
 
 将第一种方式的前三步合并为一步： `load data local inpath '/file/path' into table table_name partition(partition_name=partition_value)`
+
+---
+
+# 修改表
+
+## 表重命名
+
+语法：`alter table table_name rename to new_table_name;`
+
+***此操作会修改元数据和 HDFS 的文件夹名称***
+
+```
+hive (default)> alter table test rename to rename_table;
+OK
+Time taken: 0.185 seconds
+```
+```
+hive (default)> show tables;
+OK
+tab_name
+dept
+dept_partition
+dept_partition2
+emp
+people
+rename_table
+Time taken: 0.016 seconds, Fetched: 6 row(s)
+```
+
+## 增加/修改/替换列信息
+
+### 修改列
+
+语法：`alter table table_name CHANGE [column] col_old_name col_new_name column_type [COMMENT col_coment] [FIRST | AFTER column_name]`
+
+```
+hive (default)> alter table test CHANGE column name sex int;
+OK
+Time taken: 0.082 seconds
+
+hive (default)> desc test;
+OK
+col_name	data_type	comment
+id                  	int                 	                    
+sex                 	int              	                    
+Time taken: 0.054 seconds, Fetched: 2 row(s)
+```
+
+### 增加、替换列信息
+
+语法：`alter table table_name ADD | REPLACE COLUMNS (col_name data_type [COMMENT col_comment], ...)`
+
+```
+hive (default)> alter table test add columns (name string);
+OK
+Time taken: 0.132 seconds
+hive (default)> select * from test;
+OK
+test.id	test.name
+1	NULL
+2	NULL
+3	NULL
+4	NULL
+5	NULL
+Time taken: 0.288 seconds, Fetched: 5 row(s)
+```
+
+***注意：ADD 表示增加一个字段，字段位置在所有列的后面（partition列的前面）***
+***REPLACE 是替换表中的 所有字段！不能只替换一个字段***
+
+```
+hive (default)> alter table test replace columns (name string);
+OK
+Time taken: 0.083 seconds
+hive (default)> desc test;
+OK
+col_name	data_type	comment
+name                	string              	                    
+Time taken: 0.051 seconds, Fetched: 1 row(s)
+```
+
+## 删除表
+
+```
+hive (default)> drop table test;
+OK
+Time taken: 0.206 seconds
+```
